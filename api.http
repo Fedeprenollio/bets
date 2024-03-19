@@ -1,0 +1,55 @@
+###Listar equipos
+GET http://localhost:1234/team
+
+###Listar un equipo por id
+GET http://localhost:1234/team/65f9bdf7bbed4db012e73660
+
+###Crear equipo
+POST http://localhost:1234/team
+Content-Type: application/json
+
+{       
+    "name":"Miami",
+    "city":"Miali",
+    "ligue":"MLS"
+}
+
+###Listar partidos
+GET http://localhost:1234/match
+
+###Listar partidos de un  equipo con su ID
+GET http://localhost:1234/match/team/65f9bdf7bbed4db012e73660
+
+
+###Crear partido
+POST http://localhost:1234/match
+Content-Type: application/json
+
+{   
+    "homeTeamName": "River" ,
+    "awayTeamName": "City"
+}
+
+
+###Agregar estadistica del partido
+POST http://localhost:1234/match/65f9d335948df7758aa659ad/result
+Content-Type: application/json
+
+{
+  "goalsHome": 2,
+  "goalsAway": 10,
+  "stats": {
+    "local": {
+      "goals": 2,
+      "offsides": 30,
+      "yellowCards": 1,
+      "redCards": 0
+    },
+    "visitor": {
+      "goals": 10,
+      "offsides": 2,
+      "yellowCards": 2,
+      "redCards": 1
+    }
+  }
+}

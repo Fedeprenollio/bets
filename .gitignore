@@ -1,0 +1,17 @@
+# Dependencias instaladas por npm
+/node_modules
+
+# Archivos generados durante la ejecución del código
+/dist
+/build
+/out
+
+# Variables de entorno específicas del sistema operativo
+.env
+.env.local
+.env.*.local
+
+# Archivos de registro y datos temporales
+*.log
+*.csv
+*.sqlite
