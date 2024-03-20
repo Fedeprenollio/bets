@@ -21,14 +21,22 @@ const matchSchema = new mongoose.Schema({
       goals: Number,
       offsides: Number,
       yellowCards: Number,
-      redCards: Number
+      redCards: Number,
+      corners: Number
+
     },
     visitor: {
       goals: Number,
       offsides: Number,
       yellowCards: Number,
-      redCards: Number
+      redCards: Number,
+      corners: Number
+
     }
+  },
+  isFinished: {
+    type: Boolean,
+    default: false
   }
 
 })
