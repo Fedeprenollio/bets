@@ -6,7 +6,30 @@ export const matchRouter = Router()
 
 matchRouter.get('/', async (req, res) => {
   try {
-    const match = await Match.find().populate('homeTeam awayTeam')
+    const query = {}
+
+    // Agregar condiciones según los parámetros de consulta
+    if (req.query.isFinished) {
+      query.isFinished = req.query.isFinished === 'true' // Convierte la cadena "true" a un booleano true
+    }
+
+    if (req.query.league) {
+      query.league = req.query.league
+    }
+
+    if (req.query.seasonYear) {
+      query.seasonYear = req.query.seasonYear
+    }
+
+    if (req.query.matchDate) {
+      query.matchDate = req.query.matchDate
+    }
+
+    if (req.query.seasonYear) {
+      query.seasonYear = req.query.seasonYear
+    }
+
+    const match = await Match.find(query).populate('homeTeam awayTeam')
     res.send(match)
   } catch (error) {
     res.status(500).send(error)
@@ -15,7 +38,7 @@ matchRouter.get('/', async (req, res) => {
 
 matchRouter.post('/', async (req, res) => {
   try {
-    const { homeTeamName, awayTeamName, date } = req.body
+    const { homeTeamName, awayTeamName, date, league, seasonYear, matchDate } = req.body
 
     // Buscar los IDs de los equipos en la base de datos
     const homeTeam = await Team.findOne({ name: homeTeamName })
@@ -26,7 +49,7 @@ matchRouter.post('/', async (req, res) => {
     }
 
     // Crear un nuevo partido con los IDs encontrados y la fecha proporcionada
-    const match = new Match({ homeTeam: homeTeam._id, awayTeam: awayTeam._id, date })
+    const match = new Match({ homeTeam: homeTeam._id, awayTeam: awayTeam._id, date, league, seasonYear, matchDate })
     await match.save()
 
     // Obtener toda la información de los equipos y agregarla a la respuesta
@@ -352,6 +375,144 @@ matchRouter.get('/stats/:idTeam', async (req, res) => {
 //   }
 // })
 
+// matchRouter.get('/statsAc/:idTeam', async (req, res) => {
+//   try {
+//     const idTeam = req.params.idTeam
+//     const { matchesCount = 5, homeOnly = false, awayOnly = false } = req.query // Obtener parámetros opcionales de la consulta, faltan más por ej ultimo terciol o medio
+
+//     const booleanHomeOnly = homeOnly === 'true'
+//     const booleanAwayOnly = awayOnly === 'true'
+
+//     let query = { isFinished: true }
+
+//     if (booleanHomeOnly && !booleanAwayOnly) {
+//       query = { ...query, homeTeam: idTeam }
+//     } else if (booleanAwayOnly && !booleanHomeOnly) {
+//       query = { ...query, awayTeam: idTeam }
+//     } else if (booleanHomeOnly && booleanAwayOnly) {
+//       query = { ...query, $or: [{ homeTeam: idTeam }, { awayTeam: idTeam }] }
+//     } else {
+//       return
+//     }
+
+//     const matches = await Match.find(query)
+//       .sort({ date: -1 }) // Ordenar por fecha de manera descendente
+//       .limit(parseInt(matchesCount))
+//       .populate('homeTeam awayTeam')
+
+//     const team = await Team.findById(idTeam)
+
+//     const calculateStats = (matches, statType) => {
+//       // const stats = {
+//       //   matchesTotalFinished: matches.length,
+//       //   matchesWith0: 0,
+//       //   matchesWith0_5: 0,
+//       //   matchesWith1_5: 0,
+//       //   matchesWith2_5: 0,
+//       //   matchesWith3_5: 0,
+//       //   matchesWith4_5: 0,
+//       //   matchesWith5_5: 0,
+//       //   matchesWith6_5: 0,
+//       //   matchesWith7_5: 0,
+//       //   matchesWith8_5: 0,
+//       //   matchesWith9_5: 0,
+//       //   total: 0 // Nueva propiedad para almacenar el total de la estadística
+//       // }
+
+//       matches.forEach(match => {
+//         const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
+//         const statValue = teamStats[statType]
+
+//         // Incrementar los contadores de cada categoría
+//         if (statValue >= 0 && statValue < 0.5) {
+//           stats.matchesWith0++
+//         } else if (statValue >= 0.5 && statValue < 1.5) {
+//           stats.matchesWith0_5++
+//         } else if (statValue >= 1.5 && statValue < 2.5) {
+//           stats.matchesWith1_5++
+//         } else if (statValue >= 2.5 && statValue < 3.5) {
+//           stats.matchesWith2_5++
+//         } else if (statValue >= 3.5 && statValue < 4.5) {
+//           stats.matchesWith3_5++
+//         } else if (statValue >= 4.5 && statValue < 5.5) {
+//           stats.matchesWith4_5++
+//         } else if (statValue >= 5.5 && statValue < 6.5) {
+//           stats.matchesWith5_5++
+//         } else if (statValue >= 6.5 && statValue < 7.5) {
+//           stats.matchesWith6_5++
+//         } else if (statValue >= 7.5 && statValue < 8.5) {
+//           stats.matchesWith7_5++
+//         } else if (statValue >= 8.5 && statValue < 9.5) {
+//           stats.matchesWith8_5++
+//         } else if (statValue >= 9.5) {
+//           stats.matchesWith9_5++
+//         }
+
+//         stats.total += statValue // Incrementar el total con el valor de la estadística
+//       })
+
+//       return stats
+//     }
+
+//     // Calcular estadísticas para cada tipo de estadística
+//     const statsGoles = calculateStats(matches, 'goals')
+//     const statsOffsides = calculateStats(matches, 'offsides')
+//     const statsYellowCards = calculateStats(matches, 'yellowCards')
+//     const statsRedCards = calculateStats(matches, 'redCards')
+//     const statsCorners = calculateStats(matches, 'corners')
+
+//     // Devolver los resultados en un solo objeto
+//     const allStats = {
+//       teamId: team._id,
+//       teamName: team.name,
+//       matchesCount,
+//       homeOnly,
+//       awayOnly,
+//       goals: statsGoles,
+//       offsides: statsOffsides,
+//       yellowCards: statsYellowCards,
+//       redCards: statsRedCards,
+//       corners: statsCorners
+//     }
+
+//     res.status(200).json(allStats)
+//   } catch (error) {
+//     console.error('Error al obtener estadísticas del equipo:', error)
+//     res.status(500).send('Error al obtener estadísticas del equipo')
+//   }
+// })
+
+// Función para generar las estadísticas
+const generateStats = (matches, statType, lowerLimit, upperLimit) => {
+  const stats = {
+    matchesTotalFinished: matches.length,
+    few: 0, // Contador para los partidos con menos de lowerLimit
+    many: 0 // Contador para los partidos con más de upperLimit
+  }
+
+  // Inicializar contadores para cada categoría
+  for (let i = lowerLimit; i < upperLimit; i += 0.5) {
+    stats[`matchesWith${i.toString().replace('.', '_')}`] = 0
+  }
+
+  matches.forEach(match => {
+    const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
+    const statValue = teamStats[statType]
+
+    // Incrementar los contadores de cada categoría
+    if (statValue >= lowerLimit && statValue < upperLimit) {
+      const floorValue = Math.floor(statValue)
+      stats[`matchesWith${floorValue}_5`]++
+    } else if (statValue < lowerLimit) {
+      stats.few++
+    } else if (statValue > upperLimit) {
+      stats.many++
+    }
+  })
+
+  return stats
+}
+
 matchRouter.get('/statsAc/:idTeam', async (req, res) => {
   try {
     const idTeam = req.params.idTeam
@@ -371,54 +532,25 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
     } else {
       return
     }
-    console.log(booleanHomeOnly, booleanAwayOnly)
-    console.log(query)
+
     const matches = await Match.find(query)
       .sort({ date: -1 }) // Ordenar por fecha de manera descendente
       .limit(parseInt(matchesCount))
       .populate('homeTeam awayTeam')
 
-    // Función para calcular las estadísticas
-    const calculateStats = (matches, statType) => {
-      const stats = {
-        matchesTotalFinished: matches.length,
-        matchesWith0: 0,
-        matchesWith0_5: 0,
-        matchesWith1_5: 0,
-        matchesWith2_5: 0,
-        matchesWith3_5: 0,
-        matchesWith4_5: 0,
-        matchesWith5_5: 0,
-        matchesWith6_5: 0,
-        matchesWith7_5: 0,
-        matchesWith8_5: 0,
-        matchesWith9_5: 0
-      }
-
-      matches.forEach(match => {
-        const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
-        const statValue = teamStats[statType]
-        if (statValue >= 0.5 && statValue <= 9.5) {
-          const floorValue = Math.floor(statValue)
-          stats[`matchesWith${floorValue}_5`]++
-        } else if (statValue >= 9.5) {
-          stats.matchesWith9_5++
-        } else if (statValue === 0) {
-          stats.matchesWith0++
-        }
-      })
-      return stats
-    }
+    const team = await Team.findById(idTeam)
 
     // Calcular estadísticas para cada tipo de estadística
-    const statsGoles = calculateStats(matches, 'goals')
-    const statsOffsides = calculateStats(matches, 'offsides')
-    const statsYellowCards = calculateStats(matches, 'yellowCards')
-    const statsRedCards = calculateStats(matches, 'redCards')
-    const statsCorners = calculateStats(matches, 'corners')
+    const statsGoles = generateStats(matches, 'goals', 2.5, 5.5)
+    const statsOffsides = generateStats(matches, 'offsides', 0, Infinity)
+    const statsYellowCards = generateStats(matches, 'yellowCards', 3.5, 6.5)
+    const statsRedCards = generateStats(matches, 'redCards', 0.5, 2.5)
+    const statsCorners = generateStats(matches, 'corners', 4.5, 11.5)
 
     // Devolver los resultados en un solo objeto
     const allStats = {
+      teamId: team._id,
+      teamName: team.name,
       matchesCount,
       homeOnly,
       awayOnly,

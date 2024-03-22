@@ -37,6 +37,15 @@ const matchSchema = new mongoose.Schema({
   isFinished: {
     type: Boolean,
     default: false
+  },
+  league: {
+    type: String
+  },
+  seasonYear: {
+    type: String
+  },
+  matchDate: { // fecha ej: 4ta, 5ta
+    type: Number
   }
 
 })
