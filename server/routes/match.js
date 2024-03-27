@@ -482,41 +482,95 @@ matchRouter.get('/stats/:idTeam', async (req, res) => {
 //   }
 // })
 
-// Función para generar las estadísticas
-const generateStats = (matches, statType, lowerLimit, upperLimit) => {
-  const stats = {
-    matchesTotalFinished: matches.length,
-    few: 0, // Contador para los partidos con menos de lowerLimit
-    many: 0 // Contador para los partidos con más de upperLimit
-  }
+// matchRouter.get('/statsAc/:idTeam', async (req, res) => {
+//   try {
+//     const idTeam = req.params.idTeam
+//     const { matchesCount = 5, homeOnly = false, awayOnly = false } = req.query // Obtener parámetros opcionales de la consulta
 
-  // Inicializar contadores para cada categoría
-  for (let i = lowerLimit; i < upperLimit; i += 0.5) {
-    stats[`matchesWith${i.toString().replace('.', '_')}`] = 0
-  }
+//     const booleanHomeOnly = homeOnly === 'true'
+//     const booleanAwayOnly = awayOnly === 'true'
 
-  matches.forEach(match => {
-    const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
-    const statValue = teamStats[statType]
+//     let query = { isFinished: true }
 
-    // Incrementar los contadores de cada categoría
-    if (statValue >= lowerLimit && statValue < upperLimit) {
-      const floorValue = Math.floor(statValue)
-      stats[`matchesWith${floorValue}_5`]++
-    } else if (statValue < lowerLimit) {
-      stats.few++
-    } else if (statValue > upperLimit) {
-      stats.many++
-    }
-  })
+//     if (booleanHomeOnly && !booleanAwayOnly) {
+//       query = { ...query, homeTeam: idTeam }
+//     } else if (booleanAwayOnly && !booleanHomeOnly) {
+//       query = { ...query, awayTeam: idTeam }
+//     } else if (booleanHomeOnly && booleanAwayOnly) {
+//       query = { ...query, $or: [{ homeTeam: idTeam }, { awayTeam: idTeam }] }
+//     } else {
+//       return
+//     }
 
-  return stats
-}
+//     const matches = await Match.find(query)
+//       .sort({ date: -1 }) // Ordenar por fecha de manera descendente
+//       .limit(parseInt(matchesCount))
+//       .populate('homeTeam awayTeam')
 
+//     const team = await Team.findById(idTeam)
+//     // Función para generar las estadísticas
+//     const generateStats = (matches, statType, lowerLimit, upperLimit) => {
+//       const stats = {
+//         matchesTotalFinished: matches.length,
+//         few: 0, // Contador para los partidos con menos de lowerLimit
+//         many: 0 // Contador para los partidos con más de upperLimit
+//       }
+
+//       // Inicializar contadores para cada categoría y ponerle los limites
+//       for (let i = lowerLimit; i < upperLimit; i += 0.5) {
+//         stats[`matchesWith${i.toString().replace('.', '_')}`] = 0
+//       }
+
+//       matches.forEach(match => {
+//         const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
+//         const statValue = teamStats[statType]
+
+//         // Incrementar los contadores de cada categoría
+//         if (statValue >= lowerLimit && statValue < upperLimit) {
+//           const floorValue = Math.floor(statValue)
+//           stats[`matchesWith${floorValue}_5`]++
+//         } else if (statValue < lowerLimit) {
+//           stats.few++
+//         } else if (statValue > upperLimit) {
+//           stats.many++
+//         }
+//       })
+
+//       return stats
+//     }
+//     // Calcular estadísticas para cada tipo de estadística
+//     const statsGoles = generateStats(matches, 'goals', 2.5, 5.5)
+//     const statsOffsides = generateStats(matches, 'offsides', 0, Infinity)
+//     const statsYellowCards = generateStats(matches, 'yellowCards', 3.5, 6.5)
+//     const statsRedCards = generateStats(matches, 'redCards', 0.5, 2.5)
+//     const statsCorners = generateStats(matches, 'corners', 4.5, 11.5)
+
+//     // Devolver los resultados en un solo objeto
+//     const allStats = {
+//       teamId: team._id,
+//       teamName: team.name,
+//       matchesCount,
+//       homeOnly,
+//       awayOnly,
+//       goals: statsGoles,
+//       offsides: statsOffsides,
+//       yellowCards: statsYellowCards,
+//       redCards: statsRedCards,
+//       corners: statsCorners
+//     }
+
+//     res.status(200).json(allStats)
+//   } catch (error) {
+//     console.error('Error al obtener estadísticas del equipo:', error)
+//     res.status(500).send('Error al obtener estadísticas del equipo')
+//   }
+// })
+
+/// //////////////////////
 matchRouter.get('/statsAc/:idTeam', async (req, res) => {
   try {
     const idTeam = req.params.idTeam
-    const { matchesCount = 5, homeOnly = false, awayOnly = false } = req.query // Obtener parámetros opcionales de la consulta
+    const { statistic, matchesCount = 5, homeOnly = false, awayOnly = false, lowerLimit, upperLimit } = req.query
 
     const booleanHomeOnly = homeOnly === 'true'
     const booleanAwayOnly = awayOnly === 'true'
@@ -533,32 +587,111 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
       return
     }
 
+    if (lowerLimit && upperLimit) {
+      query = {
+        ...query,
+        $or: [
+          { [`teamStatistics.local.${statistic}`]: { $gte: parseFloat(lowerLimit), $lte: parseFloat(upperLimit) } },
+          { [`teamStatistics.visitor.${statistic}`]: { $gte: parseFloat(lowerLimit), $lte: parseFloat(upperLimit) } }
+        ]
+      }
+    }
+
+    // console.log('Query:', query) // Imprimir la consulta para verificar
+
     const matches = await Match.find(query)
-      .sort({ date: -1 }) // Ordenar por fecha de manera descendente
+      .sort({ date: -1 })
       .limit(parseInt(matchesCount))
       .populate('homeTeam awayTeam')
 
+    console.log('Matches found:', matches) // Imprimir los partidos encontrados
+
     const team = await Team.findById(idTeam)
 
-    // Calcular estadísticas para cada tipo de estadística
-    const statsGoles = generateStats(matches, 'goals', 2.5, 5.5)
-    const statsOffsides = generateStats(matches, 'offsides', 0, Infinity)
-    const statsYellowCards = generateStats(matches, 'yellowCards', 3.5, 6.5)
-    const statsRedCards = generateStats(matches, 'redCards', 0.5, 2.5)
-    const statsCorners = generateStats(matches, 'corners', 4.5, 11.5)
+    // const generateStats = (matches, statistic, lowerLimit, upperLimit) => {
+    //   const stats = {
+    //     matchesTotalFinished: matches.length,
+    //     few: 0,
+    //     many: 0,
+    //     total: 0
+    //   }
 
-    // Devolver los resultados en un solo objeto
+    //   const ranges = []
+    //   for (let i = parseFloat(lowerLimit); i <= parseFloat(upperLimit); i += 0.5) {
+    //     ranges.push(i)
+    //   }
+
+    //   ranges.forEach(range => {
+    //     const key = `matchesWith${range.toString().replace('.', '_')}`
+    //     stats[key] = 0
+    //   })
+
+    //   matches.forEach(match => {
+    //     const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
+    //     const statValue = teamStats[statistic]
+
+    //     stats.total += statValue
+
+    //     ranges.forEach(range => {
+    //       const key = `matchesWith${range.toString().replace('.', '_')}`
+    //       if (statValue >= range) {
+    //         stats[key]++
+    //       }
+    //     })
+
+    //     if (statValue < lowerLimit) {
+    //       stats.few++
+    //     } else if (statValue > upperLimit) {
+    //       stats.many++
+    //     }
+    //   })
+
+    //   return stats
+    // }
+    const generateStats = (matches, statistic, lowerLimit, upperLimit) => {
+      const stats = {
+        matchesTotalFinished: matches.length,
+        few: 0,
+        many: 0,
+        total: 0
+      }
+
+      const ranges = []
+      for (let i = Math.ceil(parseFloat(lowerLimit)); i <= Math.floor(parseFloat(upperLimit)); i++) {
+        ranges.push(i)
+      }
+
+      ranges.forEach(range => {
+        const key = `matchesWith${range.toString().replace('.', '_')}`
+        stats[key] = 0
+      })
+
+      matches.forEach(match => {
+        const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
+        const statValue = teamStats[statistic]
+
+        stats.total += statValue
+
+        ranges.forEach(range => {
+          const key = `matchesWith${range.toString().replace('.', '_')}`
+          if (statValue >= range) {
+            stats[key]++
+          }
+        })
+      })
+
+      return stats
+    }
+
+    const stats = generateStats(matches, statistic, parseFloat(lowerLimit), parseFloat(upperLimit))
+
     const allStats = {
       teamId: team._id,
       teamName: team.name,
       matchesCount,
       homeOnly,
       awayOnly,
-      goals: statsGoles,
-      offsides: statsOffsides,
-      yellowCards: statsYellowCards,
-      redCards: statsRedCards,
-      corners: statsCorners
+      [statistic]: stats
     }
 
     res.status(200).json(allStats)

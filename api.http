@@ -9,8 +9,8 @@ POST http://localhost:1234/team
 Content-Type: application/json
 
 {       
-    "name":"Miami",
-    "city":"Miali",
+    "name":"Miami 2",
+    "city":"Miami CA",
     "ligue":"MLS"
 }
 
@@ -22,7 +22,7 @@ GET http://localhost:1234/match?isFinished=false&league=Primera&seasonYear=2024&
 
 
 ###Listar partidos de un  equipo con su ID
-GET http://localhost:1234/match/team/65f9cfa690d40e6a86dcb3aa
+GET http://localhost:1234/match/team/65f9bdf7bbed4db012e73660
 
 
 ###Crear partido
@@ -76,3 +76,17 @@ GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660
 ###Estadisticas por acumulado como pidio Dani y con queries
 GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?matchesCount=10&homeOnly=true&awayOnly=true
 
+
+### pueba
+GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=goals&lowerLimit=3.5&upperLimit=8&matchesCount=10&homeOnly=true&awayOnly=true
+ 
+
+### pueba amarillas
+GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=yellowCards&lowerLimit=3.5&upperLimit=8&matchesCount=10&homeOnly=true&awayOnly=true
+
+### pueba corners
+GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=corners&lowerLimit=3.5&upperLimit=8&matchesCount=10&homeOnly=true&awayOnly=true
+ 
+
+### pueba offsies
+GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=offSides&lowerLimit=3.5&upperLimit=8&matchesCount=10&homeOnly=true&awayOnly=true
