@@ -505,11 +505,12 @@ matchRouter.get('/stats/:idTeam', async (req, res) => {
 matchRouter.get('/statsAc/:idTeam', async (req, res) => {
   try {
     const idTeam = req.params.idTeam
+    console.log('ID', idTeam)
     const {
       statistic,
       matchesCount = 5,
-      homeOnly = false,
-      awayOnly = false,
+      homeOnly = true,
+      awayOnly = true,
       lowerLimit,
       upperLimit,
       lessThan = false // Nuevo query para buscar partidos con menos de cierta cantidad
@@ -518,19 +519,39 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
     const booleanHomeOnly = homeOnly === 'true'
     const booleanAwayOnly = awayOnly === 'true'
     const boolenaLessThan = lessThan === 'true'
-
     let query = { isFinished: true }
 
+    // si SOLO JUGADOS EN HOME PERO  NO VISITA
     if (booleanHomeOnly && !booleanAwayOnly) {
       query = { ...query, homeTeam: idTeam }
+      /// SI VISITA PERO NO HOME
     } else if (booleanAwayOnly && !booleanHomeOnly) {
       query = { ...query, awayTeam: idTeam }
+      // TANTO PARTIDOS LOCALES COMO VISITANTE
     } else if (booleanHomeOnly && booleanAwayOnly) {
       query = { ...query, $or: [{ homeTeam: idTeam }, { awayTeam: idTeam }] }
     } else {
-      return
+      // Si no se especifican filtros de local y visitante, devolver estadísticas vacías
+      const emptyStats = {
+        matchesTotalFinished: 0,
+        few: 0,
+        many: 0,
+        total: 0
+        // Agrega otras estadísticas necesarias aquí y establece su valor en cero
+      }
+      const allStats = {
+        teamId: idTeam,
+        teamName: 'Nombre del Equipo', // Puedes establecer el nombre del equipo aquí
+        matches: [], // No hay partidos para mostrar
+        matchesCount: 0,
+        homeOnly,
+        awayOnly,
+        [statistic]: emptyStats,
+        lessThan
+      }
+      return res.status(200).json(allStats)
     }
-
+    console.log(query)
     if (lowerLimit && upperLimit) {
       query = {
         ...query,
@@ -553,9 +574,12 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
 
     const team = await Team.findById(idTeam)
 
+    console.log('ESTADISTICAS DE_', team, '-----', matches)
+    // console.log('NOMBRE', team.name)
+    // console.log('QUERY', query)
     const generateStats = (matches, statistic, lowerLimit, upperLimit) => {
       const stats = {
-        matchesTotalFinished: matches.length,
+        matchesTotalFinished: matches?.length || 0,
         few: 0,
         many: 0,
         total: 0
@@ -583,18 +607,18 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
           const key = `matchesWith${range.toString().replace('.', '_')}`
           if (boolenaLessThan) {
             // Si lessThan es true, contabiliza los partidos donde la estadística es menor que el rango
-            if (statValue <= range) {
+            if (statValue < range) {
               stats[key]++
             }
           } else {
             // Si lessThan es false, contabiliza los partidos donde la estadística es mayor o igual que el rango
-            if (statValue >= range) {
+            if (statValue > range) {
               stats[key]++
             }
           }
         })
 
-        if (lessThan) {
+        if (boolenaLessThan) {
           // Si lessThan es true, contabiliza los partidos donde la estadística es menor que el límite inferior
           if (statValue < lowerLimit) {
             stats.few++
