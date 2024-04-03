@@ -4,6 +4,7 @@ import { Team } from '../../schemas/team.js'
 export const teamRouter = Router()
 
 teamRouter.post('/', async (req, res) => {
+  console.log(req.body)
   try {
     const team = new Team(req.body)
     await team.save()

@@ -64,7 +64,6 @@ matchRouter.post('/', async (req, res) => {
 
     // Obtener toda la información de los equipos y agregarla a la respuesta
     const populatedMatch = await match.populate('homeTeam awayTeam')
-    console.log('Partido creado:', populatedMatch)
 
     res.status(201).send(populatedMatch)
   } catch (error) {
@@ -505,7 +504,6 @@ matchRouter.get('/stats/:idTeam', async (req, res) => {
 matchRouter.get('/statsAc/:idTeam', async (req, res) => {
   try {
     const idTeam = req.params.idTeam
-    console.log('ID', idTeam)
     const {
       statistic,
       matchesCount = 5,
@@ -551,7 +549,6 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
       }
       return res.status(200).json(allStats)
     }
-    console.log(query)
     if (lowerLimit && upperLimit) {
       query = {
         ...query,
@@ -574,9 +571,6 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
 
     const team = await Team.findById(idTeam)
 
-    console.log('ESTADISTICAS DE_', team, '-----', matches)
-    // console.log('NOMBRE', team.name)
-    // console.log('QUERY', query)
     const generateStats = (matches, statistic, lowerLimit, upperLimit) => {
       const stats = {
         matchesTotalFinished: matches?.length || 0,

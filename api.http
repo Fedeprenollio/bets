@@ -9,20 +9,20 @@ POST http://localhost:1234/team
 Content-Type: application/json
 
 {       
-    "name":"Miami 2",
-    "city":"Miami CA",
-    "ligue":"MLS"
+    "name":"Quilmes",
+    "city":"BS AS",
+    "ligue":"Primera"
 }
 
 ###Listar partidos
 GET http://localhost:1234/match
 
 ###Listar partidos con query
-GET http://localhost:1234/match?isFinished=false&league=Primera&seasonYear=2024&matchDate=7
+GET http://localhost:1234/match?isFinished=true&league=Primera&seasonYear=2024&matchDate=2
 
 
 ###Listar partidos de un  equipo con su ID
-GET http://localhost:1234/match/team/65f9bdf7bbed4db012e73660
+GET http://localhost:1234/match/team/65f9c20663ab7b64773481ef
 
 
 ###Crear partido
@@ -30,16 +30,16 @@ POST http://localhost:1234/match
 Content-Type: application/json
 
 {   
-    "homeTeamName": "Boca" ,
-    "awayTeamName": "Miami",
+    "homeTeamName": "Quilmes" ,
+    "awayTeamName": "Globo",
     "league":"Primera",
     "seasonYear":"2024",
-    "matchDate": 7
+    "matchDate": 2
 }
 
 
 ###Agregar estadistica del partido
-PUT http://localhost:1234/match/6604a4e7dd82027a6c5092d3/result
+PUT http://localhost:1234/match/660b8471282aa29ae8f28c44/result
 Content-Type: application/json
 
 {
@@ -48,7 +48,7 @@ Content-Type: application/json
   "goalsAway": 0,
   "stats": {
     "local": {
-      "goals": 0,
+      "goals": 3,
       "offsides": 12,
       "yellowCards": 2,
       "redCards": 1,
@@ -94,4 +94,5 @@ GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=offSi
 ### pueba (UTILIZANDO EN CLIENTE)
 GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=goals&lowerLimit=0.5&upperLimit=5.5&matchesCount=10&homeOnly=true&awayOnly=true&lessThan=false
 
-### 3 , 3, 1 ,5 
+### 3 , 3,    1 ,5 
+###  _ ,_  , V  ,_ ,
