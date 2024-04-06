@@ -18,7 +18,7 @@ Content-Type: application/json
 GET http://localhost:1234/match
 
 ###Listar partidos con query
-GET http://localhost:1234/match?isFinished=true&league=Primera&seasonYear=2024&matchDate=2
+GET http://localhost:1234/match?isFinished=true&league=Superliga&seasonYear=2024&matchDate=2
 
 
 ###Listar partidos de un  equipo con su ID

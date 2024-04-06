@@ -6,7 +6,7 @@ export const teamRouter = Router()
 teamRouter.post('/', async (req, res) => {
   console.log(req.body)
   try {
-    const team = new Team(req.body)
+    const team = await new Team(req.body)
     await team.save()
     res.status(201).send(team)
   } catch (error) {
@@ -35,5 +35,20 @@ teamRouter.get('/:id', async (req, res) => {
     res.send(team)
   } catch (error) {
     res.status(500).send(error)
+  }
+})
+
+teamRouter.delete('/:id', async (req, res) => {
+  try {
+    const id = req.params.id
+    // Buscar el equipo por su ID y eliminarlo
+    const deletedTeam = await Team.findByIdAndDelete(id)
+    if (!deletedTeam) {
+      return res.status(404).json({ message: 'No se encontró el equipo para eliminar' })
+    }
+    res.status(200).json({ message: 'Equipo eliminado exitosamente', deletedTeam })
+  } catch (error) {
+    console.error('Error al eliminar el equipo:', error)
+    res.status(500).json({ message: 'Error al eliminar el equipo' })
   }
 })

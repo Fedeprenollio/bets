@@ -41,10 +41,13 @@ const matchSchema = new mongoose.Schema({
   league: {
     type: String
   },
+  country: {
+    type: String
+  },
   seasonYear: {
     type: String
   },
-  matchDate: { // fecha ej: 4ta, 5ta
+  round: { // fecha ej: 4ta, 5ta Antes matchDate
     type: Number
   }
 

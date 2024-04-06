@@ -4,41 +4,123 @@ import { Team } from '../../schemas/team.js'
 
 export const matchRouter = Router()
 
+// matchRouter.get('/', async (req, res) => {
+//   try {
+//     const query = {
+
+//     }
+
+//     if (req.query.isFinished) {
+//       query.isFinished = req.query.isFinished === 'true'
+//     }
+
+//     if (req.query.league) {
+//       const encodedLeague = encodeURIComponent(req.query.league)
+//       query.league = encodedLeague
+//     }
+
+//     if (req.query.seasonYear) {
+//       const year = parseInt(req.query.seasonYear)
+//       if (!isNaN(year) && year > 0) {
+//         query.seasonYear = year
+//       } else {
+//         return res.status(400).send('Invalid seasonYear parameter')
+//       }
+//     }
+
+//     if (req.query.round) {
+//       query.round = req.query.round
+//     }
+
+//     const matches = await Match.find(query).populate('homeTeam awayTeam')
+//     res.send(matches)
+//   } catch (error) {
+//     console.error('Error fetching matches:', error)
+//     res.status(500).send('An error occurred while fetching matches')
+//   }
+// })
+
+// CASO 2 del get
+// matchRouter.get('/', async (req, res) => {
+//   console.log(req.query)
+//   try {
+//     const query = {}
+
+//     if (req.query.isFinished) {
+//       query.isFinished = req.query.isFinished === 'true'
+//     }
+
+//     if (req.query.league && req.query.league.toLowerCase() !== 'all') {
+//       const encodedLeague = decodeURIComponent(req.query.league)
+//       query.league = encodedLeague
+//     }
+
+//     if (req.query.seasonYear) {
+//       const year = parseInt(req.query.seasonYear)
+//       if (!isNaN(year) && year > 0) {
+//         query.seasonYear = year
+//       } else {
+//         return res.status(400).send('Invalid seasonYear parameter')
+//       }
+//     }
+
+//     if (req.query.round && req.query.round.toLowerCase() !== 'all') {
+//       query.round = req.query.round
+//     }
+
+//     const matches = await Match.find(query).populate('homeTeam awayTeam')
+//     console.log(matches)
+//     res.send(matches)
+//   } catch (error) {
+//     console.error('Error fetching matches:', error)
+//     res.status(500).send('An error occurred while fetching matches')
+//   }
+// })
+
 matchRouter.get('/', async (req, res) => {
+  console.log(req.query)
   try {
     const query = {}
 
-    // Agregar condiciones según los parámetros de consulta
     if (req.query.isFinished) {
-      query.isFinished = req.query.isFinished === 'true' // Convierte la cadena "true" a un booleano true
+      query.isFinished = req.query.isFinished === 'true'
     }
 
-    if (req.query.league) {
-      query.league = req.query.league
+    if (req.query.league && req.query.league.toLowerCase() !== 'all') {
+      const encodedLeague = decodeURIComponent(req.query.league)
+      query.league = encodedLeague
+    }
+
+    if (req.query.country && req.query.country.toLowerCase() !== 'all') {
+      const encodedCountry = decodeURIComponent(req.query.country)
+      query.country = encodedCountry
     }
 
     if (req.query.seasonYear) {
-      query.seasonYear = req.query.seasonYear
+      const year = parseInt(req.query.seasonYear)
+      if (!isNaN(year) && year > 0) {
+        query.seasonYear = year
+      } else {
+        return res.status(400).send('Invalid seasonYear parameter')
+      }
     }
 
-    if (req.query.matchDate) {
-      query.matchDate = req.query.matchDate
+    if (req.query.round && req.query.round.toLowerCase() !== 'all') {
+      query.round = req.query.round
     }
 
-    if (req.query.seasonYear) {
-      query.seasonYear = req.query.seasonYear
-    }
-
-    const match = await Match.find(query).populate('homeTeam awayTeam')
-    res.send(match)
+    const matches = await Match.find(query).populate('homeTeam awayTeam')
+    res.send(matches)
   } catch (error) {
-    res.status(500).send(error)
+    console.error('Error fetching matches:', error)
+    res.status(500).send('An error occurred while fetching matches')
   }
 })
 
 matchRouter.post('/', async (req, res) => {
+  console.log(req.body)
   try {
-    const { homeTeamName, awayTeamName, date, league, seasonYear, matchDate } =
+    const { homeTeamName, awayTeamName, date, league, seasonYear, round, country } =
       req.body
 
     // Buscar los IDs de los equipos en la base de datos
@@ -56,9 +138,10 @@ matchRouter.post('/', async (req, res) => {
       homeTeam: homeTeam._id,
       awayTeam: awayTeam._id,
       date,
+      country,
       league,
       seasonYear,
-      matchDate
+      round
     })
     await match.save()
 
@@ -146,69 +229,6 @@ matchRouter.get('/team/:idTeam', async (req, res) => {
   }
 })
 
-// matchRouter.get('/stats/:idTeam', async (req, res) => {
-//   try {
-//     const idTeam = req.params.idTeam
-//     const nameTeam = await Team.findById(idTeam)
-
-//     // Obtener todos los partidos del equipo como local y como visitante
-//     const homeMatches = await Match.find({ homeTeam: idTeam })
-//     const awayMatches = await Match.find({ awayTeam: idTeam })
-
-//     // Función para calcular las estadísticas
-//     const calculateStats = (matches, statType) => {
-//       const stats = {
-//         matchesTotal: matches.length,
-//         matchesWith0: 0,
-//         matchesWith1: 0,
-//         matchesWith2: 0,
-//         matchesWith3: 0,
-//         matchesWith4: 0,
-//         matchesWith5: 0,
-//         matchesWith6: 0,
-//         matchesWith7: 0,
-//         matchesWith8: 0,
-//         matchesWith9: 0,
-//         matchesWith10: 0,
-//         matchesWithMoreThan10: 0
-//       }
-
-//       matches.forEach(match => {
-//         const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
-//         const statValue = teamStats[statType]
-//         if (statValue <= 10) {
-//           stats[`matchesWith${statValue}`]++
-//         } else {
-//           stats.matchesWithMoreThan10++
-//         }
-//       })
-
-//       return stats
-//     }
-
-//     // Calcular estadísticas para cada tipo de estadística
-//     const statsGoles = calculateStats([...homeMatches, ...awayMatches], 'goals')
-//     const statsOffsides = calculateStats([...homeMatches, ...awayMatches], 'offsides')
-//     const statsYellowCards = calculateStats([...homeMatches, ...awayMatches], 'yellowCards')
-//     const statsRedCards = calculateStats([...homeMatches, ...awayMatches], 'redCards')
-//     const statsGolesRecibidos = calculateStats([...homeMatches, ...awayMatches], 'goalsReceived')
-
-//     // Devolver los resultados en un solo objeto
-//     const allStats = {
-//       team: nameTeam.name,
-//       goals: statsGoles,
-//       goalsReceived: statsGolesRecibidos,
-//       offsides: statsOffsides,
-//       yellowCards: statsYellowCards,
-//       redCards: statsRedCards
-//     }
-
-//     res.status(200).json(allStats)
-//   } catch (error) {
-//     console.error('Error al obtener estadísticas del equipo:', error)
-//     res.status(500).send('Error al obtener estadísticas del equipo')
-//   }
-// })
 matchRouter.get('/stats/:idTeam', async (req, res) => {
   try {
     const idTeam = req.params.idTeam
@@ -345,162 +365,6 @@ matchRouter.get('/stats/:idTeam', async (req, res) => {
   }
 })
 
-/// //////////////////////
-// matchRouter.get('/statsAc/:idTeam', async (req, res) => {
-//   try {
-//     const idTeam = req.params.idTeam
-//     const {
-//       statistic,
-//       matchesCount = 5,
-//       homeOnly = false,
-//       awayOnly = false,
-//       lowerLimit,
-//       upperLimit
-//     } = req.query
-//     console.log('MINIMO', lowerLimit)
-//     const booleanHomeOnly = homeOnly === 'true'
-//     const booleanAwayOnly = awayOnly === 'true'
-
-//     let query = { isFinished: true }
-
-//     if (booleanHomeOnly && !booleanAwayOnly) {
-//       query = { ...query, homeTeam: idTeam }
-//     } else if (booleanAwayOnly && !booleanHomeOnly) {
-//       query = { ...query, awayTeam: idTeam }
-//     } else if (booleanHomeOnly && booleanAwayOnly) {
-//       query = { ...query, $or: [{ homeTeam: idTeam }, { awayTeam: idTeam }] }
-//     } else {
-//       return
-//     }
-
-//     if (lowerLimit && upperLimit) {
-//       query = {
-//         ...query,
-//         $or: [
-//           {
-//             [`teamStatistics.local.${statistic}`]: {
-//               $gte: parseFloat(lowerLimit),
-//               $lte: parseFloat(upperLimit)
-//             }
-//           },
-//           {
-//             [`teamStatistics.visitor.${statistic}`]: {
-//               $gte: parseFloat(lowerLimit),
-//               $lte: parseFloat(upperLimit)
-//             }
-//           }
-//         ]
-//       }
-//     }
-
-//     const matches = await Match.find(query)
-//       .sort({ date: -1 })
-//       .limit(parseInt(matchesCount))
-//       .populate('homeTeam awayTeam')
-
-//     const team = await Team.findById(idTeam)
-
-//     // const generateStats = (matches, statistic, lowerLimit, upperLimit) => {
-//     //   const stats = {
-//     //     matchesTotalFinished: matches.length,
-//     //     few: 0,
-//     //     many: 0,
-//     //     total: 0
-//     //   }
-
-//     //   const ranges = []
-//     //   for (let i = parseFloat(lowerLimit); i <= parseFloat(upperLimit); i += 0.5) {
-//     //     ranges.push(i)
-//     //   }
-
-//     //   ranges.forEach(range => {
-//     //     const key = `matchesWith${range.toString().replace('.', '_')}`
-//     //     stats[key] = 0
-//     //   })
-
-//     //   matches.forEach(match => {
-//     //     const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
-//     //     const statValue = teamStats[statistic]
-
-//     //     stats.total += statValue
-
-//     //     ranges.forEach(range => {
-//     //       const key = `matchesWith${range.toString().replace('.', '_')}`
-//     //       if (statValue >= range) {
-//     //         stats[key]++
-//     //       }
-//     //     })
-
-//     //     if (statValue < lowerLimit) {
-//     //       stats.few++
-//     //     } else if (statValue > upperLimit) {
-//     //       stats.many++
-//     //     }
-//     //   })
-
-//     //   return stats
-//     // }
-//     const generateStats = (matches, statistic, lowerLimit, upperLimit) => {
-//       const stats = {
-//         matchesTotalFinished: matches.length,
-//         few: 0,
-//         many: 0,
-//         total: 0
-//       }
-
-//       const ranges = []
-//       for (let i = Math.floor(parseFloat(lowerLimit)); i <= Math.floor(parseFloat(upperLimit)); i++) {
-//         ranges.push(i)
-//       }
-
-//       ranges.forEach((range) => {
-//         const key = `matchesWith${range.toString().replace('.', '_')}`
-//         stats[key] = 0
-//       })
-
-//       matches.forEach((match) => {
-//         const teamStats = match.homeTeam.equals(idTeam)
-//           ? match.teamStatistics.local
-//           : match.teamStatistics.visitor
-//         const statValue = teamStats[statistic]
-
-//         stats.total += statValue
-
-//         ranges.forEach((range) => {
-//           const key = `matchesWith${range.toString().replace('.', '_')}`
-//           if (statValue >= range) {
-//             stats[key]++
-//           }
-//         })
-//         if (statValue < lowerLimit) { // Si los goles son menores que el límite inferior, incrementar el contador de partidos con menos goles
-//           stats.few++
-//         }
-//       })
-//       return stats
-//     }
-
-//     const stats = generateStats(
-//       matches,
-//       statistic,
-//       parseFloat(lowerLimit),
-//       parseFloat(upperLimit)
-//     )
-
-//     const allStats = {
-//       teamId: team._id,
-//       teamName: team.name,
-//       matchesCount,
-//       homeOnly,
-//       awayOnly,
-//       [statistic]: stats
-//     }
-
-//     res.status(200).json(allStats)
-//   } catch (error) {
-//     console.error('Error al obtener estadísticas del equipo:', error)
-//     res.status(500).send('Error al obtener estadísticas del equipo')
-//   }
-// })
 matchRouter.get('/statsAc/:idTeam', async (req, res) => {
   try {
     const idTeam = req.params.idTeam
@@ -649,5 +513,23 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
   } catch (error) {
     console.error('Error al obtener estadísticas del equipo:', error)
     res.status(500).send('Error al obtener estadísticas del equipo')
+  }
+})
+
+matchRouter.delete('/:id', async (req, res) => {
+  try {
+    const matchId = req.params.id
+
+    // Buscar y eliminar el partido por su _id
+    const deletedMatch = await Match.findByIdAndDelete(matchId)
+
+    if (!deletedMatch) {
+      return res.status(404).send('Partido no encontrado')
+    }
+
+    res.status(200).send('Partido eliminado correctamente')
+  } catch (error) {
+    console.error('Error al eliminar el partido:', error)
+    res.status(500).send('Error al eliminar el partido')
   }
 })
