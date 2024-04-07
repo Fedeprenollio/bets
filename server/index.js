@@ -4,6 +4,8 @@ import { teamRouter } from './routes/team.js'
 import { matchRouter } from './routes/match.js'
 import cors from 'cors'
 import morgan from 'morgan'
+import { leagueRouter } from './routes/league.js'
+import { seasonRouter } from './routes/season.js'
 
 const PORT = 1234
 const URI = 'mongodb+srv://fedepreno:HUxtmqUJC1nqt5jw@cluster0.my6nk96.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
@@ -17,6 +19,8 @@ app.get('/', (req, res) => {
 
 app.use('/team', teamRouter)
 app.use('/match', matchRouter)
+app.use('/league', leagueRouter)
+app.use('/season', seasonRouter)
 
 mongoose.connect(URI)
   .then(() => console.log('Connected!'))

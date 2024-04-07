@@ -96,3 +96,8 @@ GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=goals
 
 ### 3 , 3,    1 ,5 
 ###  _ ,_  , V  ,_ ,
+
+
+
+### Ligas
+GET http://localhost:1234/league

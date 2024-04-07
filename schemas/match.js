@@ -39,7 +39,8 @@ const matchSchema = new mongoose.Schema({
     default: false
   },
   league: {
-    type: String
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'League' // Nombre del modelo de la liga
   },
   country: {
     type: String

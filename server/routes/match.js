@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { Match } from '../../schemas/match.js'
 import { Team } from '../../schemas/team.js'
+import { League } from '../../schemas/leagueSchema.js'
 
 export const matchRouter = Router()
 
@@ -78,7 +79,6 @@ export const matchRouter = Router()
 // })
 
 matchRouter.get('/', async (req, res) => {
-  console.log(req.query)
   try {
     const query = {}
 
@@ -109,7 +109,8 @@ matchRouter.get('/', async (req, res) => {
       query.round = req.query.round
     }
 
-    const matches = await Match.find(query).populate('homeTeam awayTeam')
+    const matches = await Match.find(query).populate('homeTeam awayTeam').populate('league')
+    console.log('________________', matches)
     res.send(matches)
   } catch (error) {
     console.error('Error fetching matches:', error)
@@ -117,20 +118,54 @@ matchRouter.get('/', async (req, res) => {
   }
 })
 
+// matchRouter.post('/', async (req, res) => {
+//   console.log(req.body)
+//   try {
+//     const { homeTeamName, awayTeamName, date, league, seasonYear, round, country } =
+//       req.body
+
+//     // Buscar los IDs de los equipos en la base de datos
+//     const homeTeam = await Team.findOne({ name: homeTeamName })
+//     const awayTeam = await Team.findOne({ name: awayTeamName })
+
+//     if (!homeTeam || !awayTeam) {
+//       return res
+//         .status(400)
+//         .send('Uno o ambos equipos no existen en la base de datos')
+//     }
+
+//     // Crear un nuevo partido con los IDs encontrados y la fecha proporcionada
+//     const match = new Match({
+//       homeTeam: homeTeam._id,
+//       awayTeam: awayTeam._id,
+//       date,
+//       country,
+//       league,
+//       seasonYear,
+//       round
+//     })
+//     await match.save()
+
+//     // Obtener toda la información de los equipos y agregarla a la respuesta
+//     const populatedMatch = await match.populate('homeTeam awayTeam')
+
+//     res.status(201).send(populatedMatch)
+//   } catch (error) {
+//     console.error('Error al crear el partido:', error)
+//     res.status(500).send('Error al crear el partido')
+//   }
+// })
 matchRouter.post('/', async (req, res) => {
-  console.log(req.body)
+  console.log('NO HAY NADA', req.body)
   try {
-    const { homeTeamName, awayTeamName, date, league, seasonYear, round, country } =
-      req.body
+    const { homeTeamName, awayTeamName, date, league, seasonYear, round, country } = req.body
 
     // Buscar los IDs de los equipos en la base de datos
     const homeTeam = await Team.findOne({ name: homeTeamName })
     const awayTeam = await Team.findOne({ name: awayTeamName })
 
     if (!homeTeam || !awayTeam) {
-      return res
-        .status(400)
-        .send('Uno o ambos equipos no existen en la base de datos')
+      return res.status(400).send('Uno o ambos equipos no existen en la base de datos')
     }
 
     // Crear un nuevo partido con los IDs encontrados y la fecha proporcionada
@@ -147,6 +182,13 @@ matchRouter.post('/', async (req, res) => {
 
     // Obtener toda la información de los equipos y agregarla a la respuesta
     const populatedMatch = await match.populate('homeTeam awayTeam')
+
+    // Actualizar la lista de partidos en la liga correspondiente
+    const updatedLeague = await League.findByIdAndUpdate(
+      league,
+      { $push: { matches: match._id } },
+      { new: true }
+    )
 
     res.status(201).send(populatedMatch)
   } catch (error) {
