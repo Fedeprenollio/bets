@@ -6,7 +6,13 @@ export const leagueRouter = Router()
 // Obtener todas las ligas
 leagueRouter.get('/', async (req, res) => {
   try {
-    const leagues = await League.find().populate('clubs')
+    const leagues = await League.find().populate({
+      path: 'season',
+      populate: {
+        path: 'teams',
+        select: 'name' // Selecciona solo el nombre de los equipos
+      }
+    })
     res.json(leagues)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -18,24 +24,24 @@ leagueRouter.post('/', async (req, res) => {
   try {
     const league = new League({
       name: req.body.name,
-      country: req.body.country,
-      season: req.body.season
+      country: req.body.country
+      // season: req.body.season
     })
 
     // Guardar la liga
     const newLeague = await league.save()
 
-    // Si se proporciona un array de clubes en el cuerpo de la solicitud
-    if (Array.isArray(req.body.clubs) && req.body.clubs.length > 0) {
-      // Asignar los IDs de los clubes proporcionados a la liga
-      newLeague.clubs = req.body.clubs
+    // // Si se proporciona un array de clubes en el cuerpo de la solicitud
+    // if (Array.isArray(req.body.clubs) && req.body.clubs.length > 0) {
+    //   // Asignar los IDs de los clubes proporcionados a la liga
+    //   newLeague.clubs = req.body.clubs
 
-      // Poblar la información completa de los clubes
-      await newLeague.populate('clubs')
+    //   // Poblar la información completa de los clubes
+    //   await newLeague.populate('clubs')
 
-      // Guardar la liga actualizada con los clubes asociados
-      await newLeague.save()
-    }
+    //   // Guardar la liga actualizada con los clubes asociados
+    // }
+    await newLeague.save()
 
     res.status(201).json(newLeague)
   } catch (error) {

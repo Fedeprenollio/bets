@@ -101,3 +101,27 @@ GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=goals
 
 ### Ligas
 GET http://localhost:1234/league
+
+### Crear liga
+POST http://localhost:1234/league
+Content-Type: application/json
+
+{
+
+  "name":"caca",
+  "country":"Argentina"
+}
+
+
+### Temporada
+GET http://localhost:1234/season
+
+###Crear una nueva temporada
+POST http://localhost:1234/season
+Content-Type: application/json
+
+{
+  "leagueId": "6612ecc98b76b7a905ae8b3f",
+  "year":"2024"
+
+}
