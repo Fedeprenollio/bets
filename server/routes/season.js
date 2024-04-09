@@ -1,6 +1,7 @@
 import express from 'express'
 import { Season } from '../../schemas/seasonSchema.js'
 import { League } from '../../schemas/leagueSchema.js'
+import { Match } from '../../schemas/match.js'
 
 // Crear un nuevo Router
 export const seasonRouter = express.Router()
@@ -118,6 +119,36 @@ seasonRouter.get('/league/:leagueId', async (req, res) => {
     const { leagueId } = req.params
     const seasons = await Season.find({ league: leagueId })
     res.json(seasons)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})
+
+// Ruta para agregar múltiples partidos a una temporada por su ID
+seasonRouter.post('/:id/matches', async (req, res) => {
+  try {
+    // Obtener el ID de la temporada desde los parámetros de la ruta
+    const seasonId = req.params.id
+
+    // Obtener la lista de partidos desde el cuerpo de la solicitud
+    const matches = req.body.matches
+
+    // Buscar la temporada por su ID
+    const season = await Season.findById(seasonId)
+    if (!season) {
+      return res.status(404).json({ message: 'Season not found' })
+    }
+
+    // Crear los partidos y asociarlos a la temporada
+    console.log('SOY LOS PARTIDOS....', matches)
+    const createdMatches = await Match.create(matches)
+    console.log('QUE CREE', createdMatches)
+    // Agregar los IDs de los partidos a la temporada
+    season.matches.push(...createdMatches.map(match => match._id))
+    await season.save()
+
+    // Devolver los partidos creados
+    res.status(201).json(createdMatches)
   } catch (error) {
     res.status(500).json({ message: error.message })
   }

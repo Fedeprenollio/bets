@@ -46,7 +46,8 @@ const matchSchema = new mongoose.Schema({
     type: String
   },
   seasonYear: {
-    type: String
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Season' // Nombre del modelo de la Season
   },
   round: { // fecha ej: 4ta, 5ta Antes matchDate
     type: Number
