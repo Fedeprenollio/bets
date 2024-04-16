@@ -6,9 +6,11 @@ import cors from 'cors'
 import morgan from 'morgan'
 import { leagueRouter } from './routes/league.js'
 import { seasonRouter } from './routes/season.js'
+import 'dotenv/config'
+
+const URI_DB = process.env.URI_DB
 
 const PORT = 1234
-const URI = 'mongodb+srv://fedepreno:HUxtmqUJC1nqt5jw@cluster0.my6nk96.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 const app = express()
 app.use(cors())
 app.use(morgan('tiny'))
@@ -27,7 +29,7 @@ app.use('/season', seasonRouter)
 //   .catch(e => console.log(e))
 
 async function main () {
-  await mongoose.connect(URI)
+  await mongoose.connect(URI_DB)
 }
 
 await main().catch(err => console.log(err))
