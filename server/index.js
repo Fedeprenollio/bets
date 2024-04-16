@@ -22,9 +22,15 @@ app.use('/match', matchRouter)
 app.use('/league', leagueRouter)
 app.use('/season', seasonRouter)
 
-mongoose.connect(URI)
-  .then(() => console.log('Connected!'))
-  .catch(e => console.log(e))
+// mongoose.connect(URI)
+//   .then(() => console.log('Connected!'))
+//   .catch(e => console.log(e))
+
+async function main () {
+  await mongoose.connect(URI)
+}
+
+await main().catch(err => console.log(err))
 
 app.listen(PORT, () => {
   console.log(`Listening in http://localhost:${PORT}`)

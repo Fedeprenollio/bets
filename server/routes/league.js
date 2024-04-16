@@ -8,11 +8,19 @@ leagueRouter.get('/', async (req, res) => {
   try {
     const leagues = await League.find().populate({
       path: 'season',
-      populate: {
-        path: 'teams',
-        select: 'name' // Selecciona solo el nombre de los equipos
-      }
+      populate: [
+        { path: 'teams', select: 'name' }, // Populate para los equipos
+        {
+          path: 'matches',
+          select: 'awayTeam homeTeam',
+          populate: [
+            { path: 'awayTeam' }, // Populate para awayTeam
+            { path: 'homeTeam' } // Populate para homeTeam
+          ]
+        }
+      ]
     })
+    console.log('LAS LIGAS', leagues)
     res.json(leagues)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -72,7 +80,8 @@ leagueRouter.patch('/:id', async (req, res) => {
 // Eliminar una liga
 leagueRouter.delete('/:id', async (req, res) => {
   try {
-    await League.findByIdAndRemove(req.params.id)
+    const deletedDocument = await League.findByIdAndDelete(req.params.id)
+    console.log('Documento eliminado:', deletedDocument)
     res.json({ message: 'Liga eliminada' })
   } catch (error) {
     res.status(500).json({ message: error.message })

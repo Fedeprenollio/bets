@@ -89,7 +89,7 @@ GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=corne
  
 
 ### pueba offsies
-GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=offSides&lowerLimit=3.5&upperLimit=8&matchesCount=10&homeOnly=true&awayOnly=true
+GET http://localhost:1234/match/statsAc/66177fb172829d524e420b4e?statistic=goals&lowerLimit=0.5&upperLimit=12.5&matchesCount=10&homeOnly=true&awayOnly=true
 
 ### pueba (UTILIZANDO EN CLIENTE)
 GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=goals&lowerLimit=0.5&upperLimit=5.5&matchesCount=10&homeOnly=true&awayOnly=true&lessThan=false
@@ -101,6 +101,9 @@ GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?statistic=goals
 
 ### Ligas
 GET http://localhost:1234/league
+
+### Ligas DELETE
+DELETE  http://localhost:1234/league/661217d53393d074bfad45bd
 
 ### Crear liga
 POST http://localhost:1234/league
@@ -125,3 +128,6 @@ Content-Type: application/json
   "year":"2024"
 
 }
+
+###Delete temporada
+DELETE  http://localhost:1234/season

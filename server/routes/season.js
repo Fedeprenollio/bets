@@ -129,7 +129,7 @@ seasonRouter.post('/:id/matches', async (req, res) => {
   try {
     // Obtener el ID de la temporada desde los parámetros de la ruta
     const seasonId = req.params.id
-
+    console.log(seasonId)
     // Obtener la lista de partidos desde el cuerpo de la solicitud
     const matches = req.body.matches
 
@@ -138,18 +138,42 @@ seasonRouter.post('/:id/matches', async (req, res) => {
     if (!season) {
       return res.status(404).json({ message: 'Season not found' })
     }
+    console.log('TEMPORADA: ', season)
+    // Obtener los IDs de los equipos de la temporada
+    const teamsSeason = season.teams.map((team) => team.toString())
+
+    console.log('Equipos en la temporada:', teamsSeason)
+    console.log('Equipos recibidos:', matches)
+
+    // Verificar si los equipos de los partidos recibidos están en la temporada
+    const teamsInMatches = matches.every((match) => {
+      console.log('DENTRO DEL EVERy', match)
+      return (
+        teamsSeason.includes(match.homeTeam.toString()) &&
+        teamsSeason.includes(match.awayTeam.toString())
+      )
+    })
+    console.log('EQUIPOS DEL PARTIDO', teamsInMatches)
+    if (!teamsInMatches) {
+      return res
+        .status(400)
+        .json({ message: 'Some teams in matches are not in the season' })
+    }
 
     // Crear los partidos y asociarlos a la temporada
-    console.log('SOY LOS PARTIDOS....', matches)
+    console.log('Partidos recibidos:', matches)
+    // const createdMatches = await Match.create(matches)
     const createdMatches = await Match.create(matches)
-    console.log('QUE CREE', createdMatches)
+
+    console.log('PArtidos creado', createdMatches)
     // Agregar los IDs de los partidos a la temporada
-    season.matches.push(...createdMatches.map(match => match._id))
+    season.matches.push(...createdMatches.map((match) => match._id))
     await season.save()
 
     // Devolver los partidos creados
     res.status(201).json(createdMatches)
   } catch (error) {
+    console.log(error.message)
     res.status(500).json({ message: error.message })
   }
 })
