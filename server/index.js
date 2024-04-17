@@ -10,7 +10,7 @@ import 'dotenv/config'
 
 const URI_DB = process.env.URI_DB
 
-const PORT = 1234
+const PORT = process.env.PORT || 1234
 const app = express()
 app.use(cors())
 app.use(morgan('tiny'))
