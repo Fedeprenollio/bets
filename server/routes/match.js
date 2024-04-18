@@ -158,7 +158,8 @@ matchRouter.get('/', async (req, res) => {
       query.country = encodedCountry
     }
 
-    if (req.query.seasonYear) { // Ahora es un id de la temporada
+    if (req.query.seasonYear) {
+      // Ahora es un id de la temporada
       const yearId = req.query.seasonYear
       query.seasonYear = yearId
     }
@@ -188,7 +189,9 @@ matchRouter.get('/', async (req, res) => {
     }
 
     console.log('QUERY', query)
-    const matches = await Match.find(query).populate('homeTeam awayTeam').populate('league')
+    const matches = await Match.find(query)
+      .populate('homeTeam awayTeam')
+      .populate('league')
 
     res.send(matches)
   } catch (error) {
@@ -200,14 +203,24 @@ matchRouter.get('/', async (req, res) => {
 matchRouter.post('/', async (req, res) => {
   console.log('NO HAY NADA', req.body)
   try {
-    const { homeTeamName, awayTeamName, date, league, seasonYear, round, country } = req.body
+    const {
+      homeTeamName,
+      awayTeamName,
+      date,
+      league,
+      seasonYear,
+      round,
+      country
+    } = req.body
 
     // Buscar los IDs de los equipos en la base de datos
     const homeTeam = await Team.findOne({ name: homeTeamName })
     const awayTeam = await Team.findOne({ name: awayTeamName })
 
     if (!homeTeam || !awayTeam) {
-      return res.status(400).send('Uno o ambos equipos no existen en la base de datos')
+      return res
+        .status(400)
+        .send('Uno o ambos equipos no existen en la base de datos')
     }
 
     // Crear un nuevo partido con los IDs encontrados y la fecha proporcionada
@@ -260,7 +273,8 @@ matchRouter.put('/:id/result', async (req, res) => {
     // Actualizar estadísticas del equipo visitante
     match.teamStatistics.visitor.goals = teamStatistics.visitor.goals
     match.teamStatistics.visitor.offsides = teamStatistics.visitor.offsides
-    match.teamStatistics.visitor.yellowCards = teamStatistics.visitor.yellowCards
+    match.teamStatistics.visitor.yellowCards =
+      teamStatistics.visitor.yellowCards
     match.teamStatistics.visitor.redCards = teamStatistics.visitor.redCards
     match.teamStatistics.visitor.corners = teamStatistics.visitor.corners
 
@@ -657,7 +671,10 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
     } else if (booleanAwayOnly && !booleanHomeOnly) {
       query = { ...query, 'awayTeam._id': idTeam }
     } else if (booleanHomeOnly && booleanAwayOnly) {
-      query = { ...query, $or: [{ 'homeTeam._id': idTeam }, { 'awayTeam._id': idTeam }] }
+      query = {
+        ...query,
+        $or: [{ 'homeTeam._id': idTeam }, { 'awayTeam._id': idTeam }]
+      }
       console.log('FUNBALI ENTRA ****', query)
     } else {
       // Si no se especifican filtros de local y visitante, devolver estadísticas vacías
@@ -750,7 +767,7 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
       }
 
       const ranges = []
-      for (let i = (parseFloat(lowerLimit)); i <= (parseFloat(upperLimit)); i++) {
+      for (let i = parseFloat(lowerLimit); i <= parseFloat(upperLimit); i++) {
         ranges.push(i)
       }
 
@@ -804,6 +821,7 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
       parseFloat(lowerLimit),
       parseFloat(upperLimit)
     )
+    console.log('xxxxxx', stats)
 
     const allStats = {
       teamId: team._id,
@@ -814,8 +832,10 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
       awayOnly,
       [statistic]: stats,
       lessThan, // Agregar la propiedad lessThan al resultado
-      matchesWithStatistic: matches.filter(match => {
-        const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
+      matchesWithStatistic: matches.filter((match) => {
+        const teamStats = match.homeTeam.equals(idTeam)
+          ? match.teamStatistics.local
+          : match.teamStatistics.visitor
         const statValue = teamStats[statistic]
         if (boolenaLessThan) {
           return statValue < parseFloat(upperLimit)
@@ -823,13 +843,21 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
           return statValue >= parseFloat(lowerLimit)
         }
       }),
-      matchesWithRange: matches.filter(match => {
-        const teamStats = match.homeTeam.equals(idTeam) ? match.teamStatistics.local : match.teamStatistics.visitor
+      matchesWithRange: matches.filter((match) => {
+        const teamStats = match.homeTeam.equals(idTeam)
+          ? match.teamStatistics.local
+          : match.teamStatistics.visitor
         const statValue = teamStats[statistic]
         if (boolenaLessThan) {
-          return parseFloat(lowerLimit) < statValue && statValue < parseFloat(upperLimit)
+          return (
+            parseFloat(lowerLimit) < statValue &&
+            statValue < parseFloat(upperLimit)
+          )
         } else {
-          return parseFloat(lowerLimit) <= statValue && statValue <= parseFloat(upperLimit)
+          return (
+            parseFloat(lowerLimit) <= statValue &&
+            statValue <= parseFloat(upperLimit)
+          )
         }
       })
     }
@@ -855,5 +883,52 @@ matchRouter.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error al eliminar el partido:', error)
     res.status(500).send('Error al eliminar el partido')
+  }
+})
+
+matchRouter.put('/:id', async (req, res) => {
+  try {
+    const matchId = req.params.id
+    const {
+      homeTeamName,
+      awayTeamName,
+      date,
+      league,
+      seasonYear,
+      round,
+      country,
+      goalsHome,
+      goalsAway,
+      isFinished
+    } = req.body
+
+    // Primero, construyes el objeto de actualización con los campos que deseas modificar
+    const updateFields = {
+      homeTeam: homeTeamName,
+      awayTeam: awayTeamName,
+      date,
+      league,
+      seasonYear,
+      round,
+      country,
+      goalsHome,
+      goalsAway,
+      isFinished
+    }
+
+    // Luego, utilizas findByIdAndUpdate para buscar y actualizar el partido por su ID
+    // El tercer parámetro opcional configura la opción 'new' como true para devolver el documento actualizado
+    const updatedMatch = await Match.findByIdAndUpdate(matchId, updateFields, {
+      new: true
+    })
+
+    if (!updatedMatch) {
+      return res.status(404).send('Partido no encontrado')
+    }
+
+    res.status(200).send(updatedMatch)
+  } catch (error) {
+    console.error('Error al actualizar el partido:', error)
+    res.status(500).send('Error al actualizar el partido')
   }
 })

@@ -22,7 +22,7 @@ GET http://localhost:1234/match?isFinished=true&league=Superliga&seasonYear=2024
 
 
 ###Listar partidos de un  equipo con su ID
-GET http://localhost:1234/match/team/65f9c20663ab7b64773481ef
+GET http://localhost:1234/match/team/66177fb172829d524e420b4e
 
 
 ###Crear partido
