@@ -177,3 +177,38 @@ seasonRouter.post('/:id/matches', async (req, res) => {
     res.status(500).json({ message: error.message })
   }
 })
+
+// Ruta para obtener una temporada particular por su ID y filtrar los partidos por su ronda (round)
+seasonRouter.get('/:id/matches', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { round } = req.query
+    console.log('/////', id, round)
+
+    // Buscar la temporada por su ID
+    const season = await Season.findById(id).populate({
+      path: 'matches',
+      populate: [
+        { path: 'homeTeam' },
+        { path: 'awayTeam' }
+      ]
+    })
+
+    if (!season) {
+      return res.status(404).json({ message: 'Season not found' })
+    }
+
+    // Filtrar los partidos por su ronda si se proporciona el parámetro de consulta 'round'
+    let filteredMatches = season.matches
+    if (round) {
+      filteredMatches = filteredMatches.filter(match => match.round === parseInt(round))
+    }
+
+    res.json({
+      season,
+      matches: filteredMatches
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})

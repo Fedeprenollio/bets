@@ -108,3 +108,35 @@ leagueRouter.post('/:id/teams', async (req, res) => {
     res.status(400).json({ message: error.message })
   }
 })
+
+// Obtener una liga por su ID
+leagueRouter.get('/:id', async (req, res) => {
+  try {
+    // Buscar la liga por su ID en la base de datos
+    const league = await League.findById(req.params.id).populate({
+      path: 'season',
+      populate: [
+        { path: 'teams', select: 'name' }, // Populate para los equipos
+        {
+          path: 'matches',
+          select: 'awayTeam homeTeam date seasonYear round',
+          populate: [
+            { path: 'awayTeam' }, // Populate para awayTeam
+            { path: 'homeTeam' } // Populate para homeTeam
+          ]
+        }
+      ]
+    })
+
+    // Verificar si la liga existe
+    if (!league) {
+      return res.status(404).json({ message: 'Liga no encontrada' })
+    }
+
+    // Si la liga existe, devolverla en la respuesta
+    res.json(league)
+  } catch (error) {
+    // Manejar cualquier error que ocurra durante la búsqueda de la liga
+    res.status(500).json({ message: error.message })
+  }
+})

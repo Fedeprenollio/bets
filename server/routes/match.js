@@ -293,7 +293,7 @@ matchRouter.put('/:id/result', async (req, res) => {
 // Ruta para obtener un partido por su ID
 matchRouter.get('/:id', async (req, res) => {
   try {
-    const match = await Match.findById(req.params.id)
+    const match = await Match.findById(req.params.id).populate('awayTeam homeTeam league')
     if (!match) {
       return res.status(404).send({ message: 'Partido no encotrado' })
     }
@@ -309,14 +309,22 @@ matchRouter.get('/team/:idTeam', async (req, res) => {
     const idTeam = req.params.idTeam
 
     // Buscar todos los partidos en los que el equipo participó como local
-    const homeMatches = await Match.find({ homeTeam: idTeam }).populate(
-      'homeTeam awayTeam'
-    )
-
+    const homeMatches = await Match.find({ homeTeam: idTeam }).populate({
+      path: 'homeTeam',
+      populate: { path: 'league' } // Populate para la información completa de la liga del equipo local
+    }).populate({
+      path: 'awayTeam',
+      populate: { path: 'league' } // Populate para la información completa de la liga del equipo visitante
+    }).populate('league seasonYear') // Populate para la información completa de la liga y la temporada
+    console.log('NNNNN', homeMatches)
     // Buscar todos los partidos en los que el equipo participó como visitante
-    const awayMatches = await Match.find({ awayTeam: idTeam }).populate(
-      'homeTeam awayTeam'
-    )
+    const awayMatches = await Match.find({ awayTeam: idTeam }).populate({
+      path: 'homeTeam',
+      populate: { path: 'league' } // Populate para la información completa de la liga del equipo local
+    }).populate({
+      path: 'awayTeam',
+      populate: { path: 'league' } // Populate para la información completa de la liga del equipo visitante
+    }).populate('league seasonYear') // Populate para la información completa de la liga y la temporada
 
     // Combinar los partidos como local y como visitante en una sola lista
     const allMatches = [...homeMatches, ...awayMatches]
@@ -747,8 +755,6 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
       ]
     }
 
-    console.log('QUERY ESTADISTICAS---------', query)
-
     const matches = await Match.find(query)
       .sort({ date: -1 })
       .limit(parseInt(matchesCount))
@@ -821,7 +827,6 @@ matchRouter.get('/statsAc/:idTeam', async (req, res) => {
       parseFloat(lowerLimit),
       parseFloat(upperLimit)
     )
-    console.log('xxxxxx', stats)
 
     const allStats = {
       teamId: team._id,
