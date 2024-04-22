@@ -21,7 +21,7 @@ seasonRouter.post('/', async (req, res) => {
     // Agregar la temporada a la lista de temporadas de la liga
     league.season.push(season)
     await league.save()
-    res.status(201).json(season)
+    res.status(201).json({ status: 201, state: 'ok', season })
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
@@ -87,13 +87,12 @@ seasonRouter.put('/:id', async (req, res) => {
       new: true, // Devolver la temporada actualizada
       runValidators: true // Ejecutar validaciones de mongoose
     }).populate('teams')
-    console.log(season)
 
     if (!season) {
       return res.status(404).json({ message: 'Season not found' })
     }
 
-    res.json(season)
+    res.json({ status: 201, state: 'ok', season })
   } catch (error) {
     res.status(500).json({ message: error.message })
   }

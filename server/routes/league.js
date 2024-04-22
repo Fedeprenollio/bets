@@ -51,7 +51,7 @@ leagueRouter.post('/', async (req, res) => {
     // }
     await newLeague.save()
 
-    res.status(201).json(newLeague)
+    res.status(201).json({ status: 201, state: 'ok', newLeague })
   } catch (error) {
     res.status(400).json({ message: error.message })
   }
