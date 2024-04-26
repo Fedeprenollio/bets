@@ -81,8 +81,7 @@ leagueRouter.patch('/:id', async (req, res) => {
 leagueRouter.delete('/:id', async (req, res) => {
   try {
     const deletedDocument = await League.findByIdAndDelete(req.params.id)
-    console.log('Documento eliminado:', deletedDocument)
-    res.json({ message: 'Liga eliminada' })
+    res.json({ message: 'Liga eliminada', state: 'ok' })
   } catch (error) {
     res.status(500).json({ message: error.message })
   }

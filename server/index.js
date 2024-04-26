@@ -7,6 +7,7 @@ import morgan from 'morgan'
 import { leagueRouter } from './routes/league.js'
 import { seasonRouter } from './routes/season.js'
 import 'dotenv/config'
+import { userRouter } from './routes/users.js'
 
 const URI_DB = process.env.URI_DB
 
@@ -23,6 +24,7 @@ app.use('/team', teamRouter)
 app.use('/match', matchRouter)
 app.use('/league', leagueRouter)
 app.use('/season', seasonRouter)
+app.use('/user', userRouter)
 
 // mongoose.connect(URI)
 //   .then(() => console.log('Connected!'))
