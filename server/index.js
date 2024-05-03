@@ -8,12 +8,24 @@ import { leagueRouter } from './routes/league.js'
 import { seasonRouter } from './routes/season.js'
 import 'dotenv/config'
 import { userRouter } from './routes/users.js'
-
+import cookieParser from 'cookie-parser'
 const URI_DB = process.env.URI_DB
 
 const PORT = process.env.PORT || 1234
 const app = express()
-app.use(cors())
+
+const corsOptions = {
+  origin: 'http://localhost:5173',
+  credentials: true // Habilita el envío de credenciales en las solicitudes CORS
+}
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  next()
+})
+
+app.use(cookieParser())
+app.use(cors(corsOptions))
 app.use(morgan('tiny'))
 app.use(express.json())
 app.get('/', (req, res) => {

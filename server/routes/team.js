@@ -1,10 +1,11 @@
 import { Router } from 'express'
 import { Team } from '../../schemas/team.js'
 import { Match } from '../../schemas/match.js'
+import { methods as authorization } from '../middleware/authentication.js'
 
 export const teamRouter = Router()
 
-teamRouter.post('/', async (req, res) => {
+teamRouter.post('/', authorization.soloAdmin, async (req, res) => {
   console.log(req.body)
   try {
     const team = await new Team(req.body)
