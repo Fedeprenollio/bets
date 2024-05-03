@@ -22,7 +22,7 @@ GET http://localhost:1234/match?isFinished=true&league=Superliga&seasonYear=2024
 
 
 ###Listar partidos de un  equipo con su ID
-GET http://localhost:1234/match/team/66177fb172829d524e420b4e
+GET http://localhost:1234/match/team/6610eb45b4732e87b22d1e02
 
 
 ###Crear partido
@@ -110,9 +110,8 @@ POST http://localhost:1234/league
 Content-Type: application/json
 
 {
-
-  "name":"caca",
-  "country":"Argentina"
+  "name":"Prueba de zod",
+  "country":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }
 
 
@@ -131,3 +130,35 @@ Content-Type: application/json
 
 ###Delete temporada
 DELETE  http://localhost:1234/season
+
+
+
+
+###USUARIOS
+### Dar de alta usuario, SOLO ADMIN
+POST http://localhost:1234/user/register
+Content-Type: application/json
+Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGFuaWVsUHVjaG8tIiwiaWF0IjoxNzE0NDA0MTg3LCJleHAiOjE3MTUwMDg5ODd9.qtoXrLx_kgvHe8lfvBm4FRLhgjPqDn3aMT1JXNde6E4
+
+{
+  "username":"leon",
+  "password":"leon",
+  "role":"Admin"
+}
+
+###Get all users
+GET http://localhost:1234/user
+
+###Login
+POST http://localhost:1234/user/login
+Content-Type: application/json
+
+{
+  "username":"danielPucho-",
+  "password":"elGatoRojo86"
+}
+
+###Cerrar sesión
+POST http://localhost:1234/user/logout
+Content-Type: application/json
+Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGFuaWVsUHVjaG8tIiwiaWF0IjoxNzE0NDA0MTg3LCJleHAiOjE3MTUwMDg5ODd9.qtoXrLx_kgvHe8lfvBm4FRLhgjPqDn3aMT1JXNde6E4
