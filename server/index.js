@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 1234
 const app = express()
 
 const corsOptions = {
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'https://bet-reason.vercel.app'], // Sin coma después del último elemento
   credentials: true // Habilita el envío de credenciales en las solicitudes CORS
 }
 
