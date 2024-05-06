@@ -1,4 +1,5 @@
 import { League } from '../../schemas/leagueSchema.js'
+import { Team } from '../../schemas/team.js'
 
 // Obtener todas las ligas
 async function getAllLeagues (req, res) {

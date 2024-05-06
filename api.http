@@ -116,7 +116,7 @@ Content-Type: application/json
 
 
 ### Temporada
-GET http://localhost:1234/season
+GET http://localhost:1234/season/6621120a247e58e67d234af2
 
 ###Crear una nueva temporada
 POST http://localhost:1234/season
@@ -141,8 +141,8 @@ Content-Type: application/json
 Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGFuaWVsUHVjaG8tIiwiaWF0IjoxNzE0NDA0MTg3LCJleHAiOjE3MTUwMDg5ODd9.qtoXrLx_kgvHe8lfvBm4FRLhgjPqDn3aMT1JXNde6E4
 
 {
-  "username":"leon",
-  "password":"leon",
+  "username":"pucho",
+  "password":"pucho",
   "role":"Admin"
 }
 
@@ -154,11 +154,10 @@ POST http://localhost:1234/user/login
 Content-Type: application/json
 
 {
-  "username":"danielPucho-",
-  "password":"elGatoRojo86"
+  "username":"pucho",
+  "password":"pucho"
 }
 
 ###Cerrar sesión
-POST http://localhost:1234/user/logout
+GET http://localhost:1234/user/logout
 Content-Type: application/json
-Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGFuaWVsUHVjaG8tIiwiaWF0IjoxNzE0NDA0MTg3LCJleHAiOjE3MTUwMDg5ODd9.qtoXrLx_kgvHe8lfvBm4FRLhgjPqDn3aMT1JXNde6E4

@@ -9,13 +9,13 @@ export const seasonRouter = express.Router()
 // Ruta para crear una nueva temporada
 seasonRouter.post('/', async (req, res) => {
   try {
-    const { leagueId, year, teams, matches } = req.body
+    const { leagueId, year, teams, matches, numberOfRounds } = req.body
 
     console.log(leagueId, year)
     // Obtener la liga a la que se asociará la temporada
     const league = await League.findById(leagueId)
 
-    const season = new Season({ league: leagueId, year, teams, matches })
+    const season = new Season({ league: leagueId, year, teams, matches, numberOfRounds })
     await season.save()
 
     // Agregar la temporada a la lista de temporadas de la liga
@@ -39,8 +39,9 @@ seasonRouter.get('/', async (req, res) => {
 
 // Ruta para obtener una temporada por su ID
 seasonRouter.get('/:id', async (req, res) => {
+  const idSeason = req.params.id
   try {
-    const season = await Season.findById(req.params.id)
+    const season = await Season.findById(idSeason).populate('teams')
     if (!season) {
       return res.status(404).json({ message: 'Season not found' })
     }

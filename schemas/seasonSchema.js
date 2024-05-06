@@ -17,7 +17,10 @@ const seasonSchema = new mongoose.Schema({
   matches: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Match'
-  }]
+  }],
+  numberOfRounds: {
+    type: Number
+  }
 })
 
 export const Season = mongoose.model('Season', seasonSchema)

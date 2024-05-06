@@ -7,20 +7,21 @@ dotenv.config()
 
 async function login (req, res) {
   const { username, password } = req.body
-  console.log('entrando al login')
+  console.log('entrando al login!!!', username, password)
   try {
     if (!username || !password) {
       return res
         .status(400)
-        .send({ status: 'Error', message: 'Campos incompletos' })
+        .send({ status: 'error', message: 'Campos incompletos' })
     }
 
     // Verificar si el nombre de usuario ya está en uso
     const existingUser = await User.findOne({ username })
     if (!existingUser) {
+      console.log('ENTREA?')
       return res
         .status(400)
-        .json({ status: 'Error', message: 'Usuario o password incorrectos' })
+        .send({ status: 'error', message: 'Usuario o password incorrectos' })
     }
 
     // Verificar la contraseña
@@ -33,7 +34,7 @@ async function login (req, res) {
     if (!isMatchCorrect) {
       return res
         .status(401)
-        .json({ message: 'Usuario o password incorrectos' })
+        .json({ status: 'error', message: 'Usuario o password incorrectos' })
     }
 
     const token = jwt.sign(
@@ -48,7 +49,7 @@ async function login (req, res) {
     }
 
     res.cookie('jwt', token, cookieOption)
-    res.send({ status: 'ok', message: 'User loggeado' })
+    return res.send({ status: 'ok', message: 'User loggeado' })
   } catch (error) {
     res.status(500).json({ message: 'Error en login' })
   }
@@ -61,7 +62,7 @@ async function register (req, res) {
     if (!username || !password) {
       return res
         .status(400)
-        .send({ status: 'Error', message: 'Campos incompletos' })
+        .send({ status: 'error', message: 'Campos incompletos' })
     }
     // Verificar si el nombre de usuario ya está en uso
     const existingUser = await User.findOne({ username })

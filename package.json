@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch ./server/index.js",
-    "prod": "node ./server/index.js"
+    "prod": "node ./server/index.js",
+    "ndm":"nodemon ./server/index.js"
   },
   "keywords": [],
   "author": "",

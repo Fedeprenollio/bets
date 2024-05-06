@@ -5,7 +5,6 @@ import { Team } from '../../schemas/team.js'
 const getAllMatches = async (req, res) => {
   try {
     const query = {}
-    console.log('FINALIZADO?', req.query.isFinished)
 
     if (req.query.isFinished) {
       if (req.query.isFinished !== 'all') {

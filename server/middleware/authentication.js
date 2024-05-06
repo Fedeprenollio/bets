@@ -21,6 +21,11 @@ const soloPublic = async (req, res, next) => {
 
 const revisarCookie = async (req) => {
   const cookies = req.headers.cookie
+  // Verificar si las cookies están definidas y no son nulas o vacías
+  if (!cookies || cookies.trim() === '') {
+    return false
+  }
+
   try {
     const cookieJwt = cookies
       ?.split('; ')
