@@ -108,10 +108,11 @@ DELETE  http://localhost:1234/league/661217d53393d074bfad45bd
 ### Crear liga
 POST http://localhost:1234/league
 Content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoicHVjaG8iLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MTUwNTg1MjksImV4cCI6MTcxNTY2MzMyOX0.qbzzCbv0Vl61F36u0Crp4Koo4rSlmRGmLqb1jMQoU1c
 
 {
   "name":"Prueba de zod",
-  "country":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  "country":"Arg"
 }
 
 
@@ -141,7 +142,7 @@ Content-Type: application/json
 Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGFuaWVsUHVjaG8tIiwiaWF0IjoxNzE0NDA0MTg3LCJleHAiOjE3MTUwMDg5ODd9.qtoXrLx_kgvHe8lfvBm4FRLhgjPqDn3aMT1JXNde6E4
 
 {
-  "username":"pucho",
+  "username":"pucho2",
   "password":"pucho",
   "role":"Admin"
 }
@@ -160,4 +161,9 @@ Content-Type: application/json
 
 ###Cerrar sesión
 GET http://localhost:1234/user/logout
+Content-Type: application/json
+
+
+###verificar token
+POST http://localhost:1234/verify-token
 Content-Type: application/json
