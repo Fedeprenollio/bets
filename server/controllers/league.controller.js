@@ -1,5 +1,8 @@
+import jwt from 'jsonwebtoken'
 import { League } from '../../schemas/leagueSchema.js'
 import { Team } from '../../schemas/team.js'
+import dotenv from 'dotenv'
+dotenv.config()
 
 // Obtener todas las ligas
 async function getAllLeagues (req, res) {
@@ -18,7 +21,6 @@ async function getAllLeagues (req, res) {
         }
       ]
     })
-    console.log('LAS LIGAS', leagues)
     res.json(leagues)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -29,6 +31,24 @@ async function getAllLeagues (req, res) {
 async function createLeague (req, res) {
   try {
     const { name, country, season } = req.body
+
+    // const authorization = req.get('authorization')
+    // let token = null
+    // if (authorization && authorization.toLowerCase().startsWith('bearer')) {
+    //   token = authorization.substring(7)
+    // }
+    // let decodedToken = {}
+    // try {
+    //   decodedToken = jwt.verify(token, process.env.JWT_SECRET)
+    // } catch (e) {
+    //   console.log(e)
+    //   res.status(401).send({ error: 'Token inválido o faltante. Logueate por favor' })
+    //   return
+    // }
+
+    // if (!token || !decodedToken.user) {
+    //   res.status(401).send({ error: 'Token faltnte o invalido, logueate por favor' })
+    // }
 
     const league = new League({ name, country, season })
 

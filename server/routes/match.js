@@ -1,16 +1,17 @@
 import { Router } from 'express'
 import { methods as matchController } from '../controllers/match.controller.js'
+import { verifyToken } from '../middleware/verifyToken .js'
 
 export const matchRouter = Router()
 
 matchRouter.get('/', matchController.getAllMatches)
-matchRouter.post('/', matchController.createMatch)
-matchRouter.put('/:id/result', matchController.updateMatchResult)
+matchRouter.post('/', verifyToken, matchController.createMatch)
+matchRouter.put('/:id/result', verifyToken, matchController.updateMatchResult)
 matchRouter.get('/:id', matchController.getMatchById)
 matchRouter.get('/team/:idTeam', matchController.getMatchesByTeamId)
 matchRouter.get('/statsAc/:idTeam', matchController.getTeamStats)
-matchRouter.delete('/:id', matchController.deleteMatchById)
-matchRouter.put('/:id', matchController.updateMatchById)
+matchRouter.delete('/:id', verifyToken, matchController.deleteMatchById)
+matchRouter.put('/:id', verifyToken, matchController.updateMatchById)
 
 // import { Router } from "express";
 // import { Match } from "../../schemas/match.js";

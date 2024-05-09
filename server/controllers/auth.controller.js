@@ -7,7 +7,6 @@ dotenv.config()
 
 async function login (req, res) {
   const { username, password } = req.body
-  console.log('entrando al login!!!', username, password)
   try {
     if (!username || !password) {
       return res
@@ -49,7 +48,7 @@ async function login (req, res) {
     }
 
     res.cookie('jwt', token, cookieOption)
-    return res.send({ status: 'ok', message: 'User loggeado' })
+    return res.send({ status: 'ok', message: 'User loggeado', token, user: existingUser.username })
   } catch (error) {
     res.status(500).json({ message: 'Error en login' })
   }

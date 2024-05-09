@@ -36,8 +36,8 @@ export const userRouter = Router()
 //     res.status(500).json({ message: 'Error al crear el usuario' })
 //   }
 // })
-userRouter.post('/register', authorization.soloAdmin, authentication.register)
-userRouter.post('/login', authorization.soloPublic, authentication.login)
-userRouter.get('/logout', authorization.soloAdmin, authentication.logout)
+userRouter.post('/register', authentication.register)
+userRouter.post('/login', authentication.login)
+userRouter.get('/logout', authentication.logout)
 
 // userRouter.get('/', getAllUsers)

@@ -9,6 +9,7 @@ import { seasonRouter } from './routes/season.js'
 import 'dotenv/config'
 import { userRouter } from './routes/users.js'
 import cookieParser from 'cookie-parser'
+import verifyTokenRouter from './routes/validatedToken.js'
 const URI_DB = process.env.URI_DB
 
 const PORT = process.env.PORT || 1234
@@ -19,15 +20,15 @@ const corsOptions = {
   credentials: true // Habilita el envío de credenciales en las solicitudes CORS
 }
 
+app.use(cors(corsOptions))
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT')
   next()
 })
 
-app.use(cookieParser())
-app.use(cors(corsOptions))
-app.use(morgan('tiny'))
 app.use(express.json())
+app.use(cookieParser())
+app.use(morgan('tiny'))
 app.get('/', (req, res) => {
   res.send('Hola')
 })
@@ -37,7 +38,13 @@ app.use('/match', matchRouter)
 app.use('/league', leagueRouter)
 app.use('/season', seasonRouter)
 app.use('/user', userRouter)
+app.use('/verify-token', verifyTokenRouter)
 
+app.use((req, res, next) => {
+  res.status(404).json({
+    error: 'Not found'
+  })
+})
 // mongoose.connect(URI)
 //   .then(() => console.log('Connected!'))
 //   .catch(e => console.log(e))

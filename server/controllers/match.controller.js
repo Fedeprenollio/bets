@@ -157,7 +157,7 @@ const updateMatchResult = async (req, res) => {
 }
 
 // Controlador para obtener un partido por su ID
-const getMatchById = async (req, res) => {
+const getMatchById = async (req, res, next) => {
   try {
     const match = await Match.findById(req.params.id).populate(
       'awayTeam homeTeam league'
@@ -168,7 +168,7 @@ const getMatchById = async (req, res) => {
     res.send(match)
   } catch (error) {
     console.error('Error fetching match by ID:', error)
-    res.status(500).send('An error occurred while fetching match by ID')
+    res.status(500).send({ error: 'An error occurred while fetching match by ID' })
   }
 }
 
