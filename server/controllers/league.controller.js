@@ -1,4 +1,3 @@
-import jwt from 'jsonwebtoken'
 import { League } from '../../schemas/leagueSchema.js'
 import { Team } from '../../schemas/team.js'
 import dotenv from 'dotenv'

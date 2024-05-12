@@ -72,6 +72,10 @@ GET http://localhost:1234/match/stats/65f9bdf7bbed4db012e73660
 ###Estadisticas por acumulado como pidio Dani
 GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660
 
+###Estadisticas por acumulado como pidio Dani por todos los equipos de UNA TEMPORADA
+GET http://localhost:1234/match/team-stats/65f9bdf7bbed4db012e73660
+
+
 
 ###Estadisticas por acumulado como pidio Dani y con queries
 GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660?matchesCount=10&homeOnly=true&awayOnly=true
@@ -117,7 +121,7 @@ Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoicHVjaG8iL
 
 
 ### Temporada
-GET http://localhost:1234/season/6621120a247e58e67d234af2
+GET http://localhost:1234/season/6637dbf7b2a2deab04a69a97
 
 ###Crear una nueva temporada
 POST http://localhost:1234/season

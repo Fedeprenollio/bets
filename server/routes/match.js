@@ -10,6 +10,8 @@ matchRouter.put('/:id/result', verifyToken, matchController.updateMatchResult)
 matchRouter.get('/:id', matchController.getMatchById)
 matchRouter.get('/team/:idTeam', matchController.getMatchesByTeamId)
 matchRouter.get('/statsAc/:idTeam', matchController.getTeamStats)
+matchRouter.get('/team-stats/:seasonId', matchController.getTeamStatsForSeason)
+
 matchRouter.delete('/:id', verifyToken, matchController.deleteMatchById)
 matchRouter.put('/:id', verifyToken, matchController.updateMatchById)
 

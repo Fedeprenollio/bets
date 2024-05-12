@@ -1,15 +1,42 @@
 import mongoose from 'mongoose'
 
-const standingsSchema = new mongoose.Schema({
-  league: { type: mongoose.Schema.Types.ObjectId, ref: 'League' },
-  season: String,
-  standings: [{
-    team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
-    points: Number,
-    position: Number
-  }]
+const teamStatsSchema = new mongoose.Schema({
+  team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+  all: {
+    goals: Number,
+    matches_played: Number,
+    matches_won: Number,
+    matches_drawn: Number,
+    matches_lost: Number,
+    goals_for: Number,
+    goals_against: Number,
+    goal_difference: Number
+  },
+  visit: {
+    goals: Number,
+    matches_played: Number,
+    matches_won: Number,
+    matches_drawn: Number,
+    matches_lost: Number,
+    goals_for: Number,
+    goals_against: Number,
+    goal_difference: Number
+  },
+  home: {
+    goals: Number,
+    matches_played: Number,
+    matches_won: Number,
+    matches_drawn: Number,
+    matches_lost: Number,
+    goals_for: Number,
+    goals_against: Number,
+    goal_difference: Number
+  }
 })
 
-const Standings = mongoose.model('Standings', standingsSchema)
+const standingsSchema = new mongoose.Schema({
+  season: { type: mongoose.Schema.Types.ObjectId, ref: 'Season' },
+  teams: [teamStatsSchema]
+})
 
-module.exports = Standings
+export const Standings = mongoose.model('Standings', standingsSchema)

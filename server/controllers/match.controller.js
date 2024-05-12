@@ -1,5 +1,6 @@
 import { Match } from '../../schemas/match.js'
 import { Team } from '../../schemas/team.js'
+import { League } from '../../schemas/leagueSchema.js'
 
 // Controlador para obtener todos los partidos con filtros opcionales
 const getAllMatches = async (req, res) => {
@@ -119,15 +120,15 @@ const createMatch = async (req, res) => {
 
 // Controlador para actualizar el resultado de un partido
 const updateMatchResult = async (req, res) => {
-  console.log('ESTADISTICA? ****')
   try {
     const { goalsHome, goalsAway, teamStatistics } = req.body
+    console.log('++++++', teamStatistics)
     const matchId = req.params.id
     const match = await Match.findById(matchId)
     if (!match) {
       return res.status(404).send('Partido no encontrado')
     }
-
+    console.log('MATCH', match.homeTeam)
     // Actualizar estadísticas del equipo local
     match.teamStatistics.local.goals = teamStatistics.local.goals
     match.teamStatistics.local.offsides = teamStatistics.local.offsides
@@ -407,6 +408,52 @@ const getTeamStats = async (req, res) => {
   }
 }
 
+const getTeamStatsForSeason = async (req, res) => {
+  const { seasonId } = req.params
+  try {
+    // Obtener todos los partidos de la temporada
+    const matches = await Match.find({ seasonYear: seasonId }).populate('homeTeam awayTeam')
+
+    // Objeto para almacenar las estadísticas de cada equipo
+    const teamStats = {}
+
+    // Iterar sobre cada partido
+    matches.forEach((match) => {
+      // Obtener los equipos involucrados en el partido
+      const homeTeam = match.homeTeam.name
+      const awayTeam = match.awayTeam.name
+
+      // Actualizar las estadísticas del equipo local
+      if (!teamStats[homeTeam]) {
+        teamStats[homeTeam] = { goals: 0, corners: 0, yellowCards: 0 }
+      }
+      teamStats[homeTeam].goals += match.goalsHome || 0
+      teamStats[homeTeam].corners += match.teamStatistics.local.corners || 0
+      teamStats[homeTeam].yellowCards += match.teamStatistics.local.yellowCards || 0
+
+      // Actualizar las estadísticas del equipo visitante
+      if (!teamStats[awayTeam]) {
+        teamStats[awayTeam] = { goals: 0, corners: 0, yellowCards: 0 }
+      }
+      teamStats[awayTeam].goals += match.goalsAway || 0
+      teamStats[awayTeam].corners += match.teamStatistics.visitor.corners || 0
+      teamStats[awayTeam].yellowCards += match.teamStatistics.visitor.yellowCards || 0
+    })
+
+    // Convertir el objeto de estadísticas de equipos a un array de objetos
+    const teamStatsArray = Object.keys(teamStats).map((teamName) => ({
+      team: teamName,
+      goals: teamStats[teamName].goals,
+      corners: teamStats[teamName].corners,
+      yellowCards: teamStats[teamName].yellowCards
+    }))
+
+    return res.send({ matches, teamStatsArray })
+  } catch (error) {
+    return res.status(500).send({ error })
+  }
+}
+
 // Controlador para eliminar un partido por su ID
 const deleteMatchById = async (req, res) => {
   try {
@@ -482,5 +529,6 @@ export const methods = {
   getMatchesByTeamId,
   getTeamStats,
   deleteMatchById,
-  updateMatchById
+  updateMatchById,
+  getTeamStatsForSeason
 }

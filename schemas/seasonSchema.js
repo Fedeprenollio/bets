@@ -20,6 +20,10 @@ const seasonSchema = new mongoose.Schema({
   }],
   numberOfRounds: {
     type: Number
+  },
+  standings: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Standing'
   }
 })
 

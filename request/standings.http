@@ -1,0 +1,15 @@
+###Listar equipos
+POST  http://localhost:1234/standings/season/6637dbf7b2a2deab04a69a97
+
+###Listar equipos
+GET  http://localhost:1234/standings/season/6637dbf7b2a2deab04a69a97
+
+###LDELETE ALL talass
+DELETE   http://localhost:1234/standings
+
+###Listar equipos
+GET  http://localhost:1234/standings/6637dbf7b2a2deab04a69a97/team/66200abf18009a8a97c25b0b/stats
+
+
+###Listar equipos
+GET  http://localhost:1234/standings/6637dbf7b2a2deab04a69a97
