@@ -411,46 +411,72 @@ const getTeamStats = async (req, res) => {
 const getTeamStatsForSeason = async (req, res) => {
   const { seasonId } = req.params
   try {
-    // Obtener todos los partidos de la temporada
+    // Buscar todos los partidos de la temporada especificada
     const matches = await Match.find({ seasonYear: seasonId }).populate('homeTeam awayTeam')
 
     // Objeto para almacenar las estadísticas de cada equipo
     const teamStats = {}
 
-    // Iterar sobre cada partido
+    // Iterar sobre cada partido y acumular las estadísticas
     matches.forEach((match) => {
-      // Obtener los equipos involucrados en el partido
-      const homeTeam = match.homeTeam.name
-      const awayTeam = match.awayTeam.name
-
-      // Actualizar las estadísticas del equipo local
-      if (!teamStats[homeTeam]) {
-        teamStats[homeTeam] = { goals: 0, corners: 0, yellowCards: 0 }
+      // Acumular estadísticas del equipo local
+      const homeTeamId = match.homeTeam._id
+      const homeTeamName = match.homeTeam.name
+      if (!teamStats[homeTeamId]) {
+        teamStats[homeTeamId] = {
+          team: homeTeamName,
+          goals: 0,
+          offsides: 0,
+          yellowCards: 0,
+          redCards: 0,
+          corners: 0
+        }
       }
-      teamStats[homeTeam].goals += match.goalsHome || 0
-      teamStats[homeTeam].corners += match.teamStatistics.local.corners || 0
-      teamStats[homeTeam].yellowCards += match.teamStatistics.local.yellowCards || 0
+      const { goals: localGoals, offsides: localOffsides, yellowCards: localYellowCards, redCards: localRedCards, corners: localCorners } = match.teamStatistics.local
+      teamStats[homeTeamId].goals += localGoals || 0
+      teamStats[homeTeamId].offsides += localOffsides || 0
+      teamStats[homeTeamId].yellowCards += localYellowCards || 0
+      teamStats[homeTeamId].redCards += localRedCards || 0
+      teamStats[homeTeamId].corners += localCorners || 0
 
-      // Actualizar las estadísticas del equipo visitante
-      if (!teamStats[awayTeam]) {
-        teamStats[awayTeam] = { goals: 0, corners: 0, yellowCards: 0 }
+      // Acumular estadísticas del equipo visitante
+      const awayTeamId = match.awayTeam._id
+      const awayTeamName = match.awayTeam.name
+      if (!teamStats[awayTeamId]) {
+        teamStats[awayTeamId] = {
+          team: awayTeamName,
+          goals: 0,
+          offsides: 0,
+          yellowCards: 0,
+          redCards: 0,
+          corners: 0
+        }
       }
-      teamStats[awayTeam].goals += match.goalsAway || 0
-      teamStats[awayTeam].corners += match.teamStatistics.visitor.corners || 0
-      teamStats[awayTeam].yellowCards += match.teamStatistics.visitor.yellowCards || 0
+      const { goals: visitorGoals, offsides: visitorOffsides, yellowCards: visitorYellowCards, redCards: visitorRedCards, corners: visitorCorners } = match.teamStatistics.visitor
+      teamStats[awayTeamId].goals += visitorGoals || 0
+      teamStats[awayTeamId].offsides += visitorOffsides || 0
+      teamStats[awayTeamId].yellowCards += visitorYellowCards || 0
+      teamStats[awayTeamId].redCards += visitorRedCards || 0
+      teamStats[awayTeamId].corners += visitorCorners || 0
     })
 
     // Convertir el objeto de estadísticas de equipos a un array de objetos
-    const teamStatsArray = Object.keys(teamStats).map((teamName) => ({
-      team: teamName,
-      goals: teamStats[teamName].goals,
-      corners: teamStats[teamName].corners,
-      yellowCards: teamStats[teamName].yellowCards
+    const teamStatsArray = Object.keys(teamStats).map((teamId) => ({
+      teamId,
+      teamName: teamStats[teamId].team,
+      statistics: {
+        goals: teamStats[teamId].goals,
+        offsides: teamStats[teamId].offsides,
+        yellowCards: teamStats[teamId].yellowCards,
+        redCards: teamStats[teamId].redCards,
+        corners: teamStats[teamId].corners
+      }
     }))
 
-    return res.send({ matches, teamStatsArray })
+    res.json(teamStatsArray)
   } catch (error) {
-    return res.status(500).send({ error })
+    console.error('Error fetching team statistics for season:', error)
+    res.status(500).json({ error: 'An error occurred while fetching team statistics for season' })
   }
 }
 
