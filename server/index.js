@@ -11,6 +11,7 @@ import { userRouter } from './routes/users.js'
 import cookieParser from 'cookie-parser'
 import verifyTokenRouter from './routes/validatedToken.js'
 import { standingsRouter } from './routes/standings.js'
+import { fechaRouter } from './routes/fecha.js'
 const URI_DB = process.env.URI_DB
 
 const PORT = process.env.PORT || 1234
@@ -40,6 +41,8 @@ app.use('/league', leagueRouter)
 app.use('/season', seasonRouter)
 app.use('/user', userRouter)
 app.use('/standings', standingsRouter)
+app.use('/fecha', fechaRouter)
+
 app.use('/verify-token', verifyTokenRouter)
 
 app.use((req, res, next) => {

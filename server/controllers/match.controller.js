@@ -1,6 +1,8 @@
 import { Match } from '../../schemas/match.js'
 import { Team } from '../../schemas/team.js'
 import { League } from '../../schemas/leagueSchema.js'
+import { Fecha } from '../../schemas/fechaSchema.js'
+import { Season } from '../../schemas/seasonSchema.js'
 
 // Controlador para obtener todos los partidos con filtros opcionales
 const getAllMatches = async (req, res) => {
@@ -67,6 +69,56 @@ const getAllMatches = async (req, res) => {
 }
 
 // Controlador para crear un nuevo partido
+// const createMatch = async (req, res) => {
+//   try {
+//     const {
+//       homeTeamName,
+//       awayTeamName,
+//       date,
+//       league,
+//       seasonYear,
+//       round,
+//       country
+//     } = req.body
+
+//     // Buscar los IDs de los equipos en la base de datos
+//     const homeTeam = await Team.findOne({ name: homeTeamName })
+//     const awayTeam = await Team.findOne({ name: awayTeamName })
+
+//     if (!homeTeam || !awayTeam) {
+//       return res
+//         .status(400)
+//         .send('Uno o ambos equipos no existen en la base de datos')
+//     }
+
+//     // Crear un nuevo partido con los IDs encontrados y la fecha proporcionada
+//     const match = new Match({
+//       homeTeam: homeTeam._id,
+//       awayTeam: awayTeam._id,
+//       date,
+//       country,
+//       league,
+//       seasonYear,
+//       round
+//     })
+//     await match.save()
+
+//     // Obtener toda la información de los equipos y agregarla a la respuesta
+//     const populatedMatch = await match.populate('homeTeam awayTeam')
+
+//     // Actualizar la lista de partidos en la liga correspondiente
+//     const updatedLeague = await League.findByIdAndUpdate(
+//       league,
+//       { $push: { matches: match._id } },
+//       { new: true }
+//     )
+
+//     res.status(201).send(populatedMatch)
+//   } catch (error) {
+//     console.error('Error creating match:', error)
+//     res.status(500).send('An error occurred while creating the match')
+//   }
+// }
 const createMatch = async (req, res) => {
   try {
     const {
@@ -99,7 +151,36 @@ const createMatch = async (req, res) => {
       seasonYear,
       round
     })
+
+    // Guardar el partido
     await match.save()
+    console.log('RONDA', round)
+    console.log('SEASON', seasonYear)
+    // Obtener la temporada correspondiente
+    const season = await Season.findOne({ year: seasonYear })
+
+    // Verificar si la temporada existe
+    if (!season) {
+      return res
+        .status(400)
+        .send('La temporada especificada no existe en la base de datos')
+    }
+
+    // Obtener la fecha correspondiente (o crear una nueva si no existe)
+    let fecha = await Fecha.findOne({ number: round, season: seasonYear })
+
+    if (!fecha) {
+      fecha = new Fecha({ number: round, season: seasonYear })
+      await fecha.save()
+    }
+
+    // Agregar el partido a la fecha
+    fecha.matches.push(match._id)
+    await fecha.save()
+
+    // Asociar la fecha a la temporada
+    season.fechas.push(fecha._id)
+    await season.save()
 
     // Obtener toda la información de los equipos y agregarla a la respuesta
     const populatedMatch = await match.populate('homeTeam awayTeam')

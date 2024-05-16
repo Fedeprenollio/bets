@@ -2,11 +2,11 @@ import { Router } from 'express'
 import { Team } from '../../schemas/team.js'
 import { Match } from '../../schemas/match.js'
 import { methods as authorization } from '../middleware/authentication.js'
+import { verifyToken } from '../middleware/verifyToken .js'
 
 export const teamRouter = Router()
 
-teamRouter.post('/', authorization.soloAdmin, async (req, res) => {
-  console.log(req.body)
+teamRouter.post('/', verifyToken, async (req, res) => {
   try {
     const team = await new Team(req.body)
     await team.save()

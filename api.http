@@ -70,10 +70,10 @@ GET http://localhost:1234/match/stats/65f9bdf7bbed4db012e73660
 
 
 ###Estadisticas por acumulado como pidio Dani
-GET http://localhost:1234/match/statsAc/65f9bdf7bbed4db012e73660
+GET http://localhost:1234/match/statsAc/6637dbf7b2a2deab04a69a97
 
 ###Estadisticas por acumulado como pidio Dani por todos los equipos de UNA TEMPORADA
-GET http://localhost:1234/match/team-stats/65f9bdf7bbed4db012e73660
+GET http://localhost:1234/match/team-stats/6637dbf7b2a2deab04a69a97
 
 
 
@@ -121,7 +121,7 @@ Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoicHVjaG8iL
 
 
 ### Temporada
-GET http://localhost:1234/season/6637dbf7b2a2deab04a69a97
+GET http://localhost:1234/season/6644cd86a2c9d8e4bd202488
 
 ###Crear una nueva temporada
 POST http://localhost:1234/season
@@ -171,3 +171,11 @@ Content-Type: application/json
 ###verificar token
 POST http://localhost:1234/verify-token
 Content-Type: application/json
+
+
+
+###Obtener fechas de una season
+GET  http://localhost:1234/fecha/66456d6650a401a91720c1e2
+
+### Temporada
+GET http://localhost:1234/season/66456d6650a401a91720c1e2

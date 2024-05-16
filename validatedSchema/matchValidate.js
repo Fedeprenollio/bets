@@ -21,5 +21,5 @@ export const MatchSchema = z.object({
   league: z.string(), // Puedes ajustar el tipo según el tipo de identificador que uses en MongoDB
   country: z.string().optional(),
   seasonYear: z.string(), // Puedes ajustar el tipo según el tipo de identificador que uses en MongoDB
-  round: z.number().optional()
+  round: z.string().optional()
 })

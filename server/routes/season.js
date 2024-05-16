@@ -1,9 +1,5 @@
 import express from 'express'
-import { Season } from '../../schemas/seasonSchema.js'
-import { League } from '../../schemas/leagueSchema.js'
-import { Match } from '../../schemas/match.js'
 import { controllers } from '../controllers/season.controller.js'
-import { verifyToken } from '../middleware/verifyToken .js'
 
 // Crear un nuevo Router
 export const seasonRouter = express.Router()
@@ -26,7 +22,10 @@ seasonRouter.delete('/:id', controllers.deleteSeasonById)
 seasonRouter.get('/league/:leagueId', controllers.getSeasonsByLeagueId)
 
 // Ruta para agregar múltiples partidos a una temporada por su ID
-seasonRouter.post('/:id/matches', controllers.addMatchesToSeason)
+seasonRouter.post('/:seasonId/matches', controllers.addMatchesToSeason)
+
+// Ruta para agregar marcar la acutual temporada
+seasonRouter.put('/:leagueId/:seasonId/isCurrent', controllers.isCurrentSeason)
 
 // Ruta para obtener una temporada particular por su ID y filtrar los partidos por su ronda (round)
 seasonRouter.get('/:id/matches', controllers.getSeasonMatchesByRound)

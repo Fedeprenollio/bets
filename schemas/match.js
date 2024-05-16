@@ -50,7 +50,7 @@ const matchSchema = new mongoose.Schema({
     ref: 'Season' // Nombre del modelo de la Season
   },
   round: { // fecha ej: 4ta, 5ta Antes matchDate
-    type: Number
+    type: String
   }
 
 })

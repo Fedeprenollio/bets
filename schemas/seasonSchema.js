@@ -21,6 +21,13 @@ const seasonSchema = new mongoose.Schema({
   numberOfRounds: {
     type: Number
   },
+  isCurrentSeason: {
+    type: Boolean
+  },
+  fechas: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Fecha'
+  }],
   standings: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Standing'

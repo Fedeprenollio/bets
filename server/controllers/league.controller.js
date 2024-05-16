@@ -1,6 +1,6 @@
 import { League } from '../../schemas/leagueSchema.js'
 import { Team } from '../../schemas/team.js'
-import dotenv from 'dotenv'
+import dotenv, { populate } from 'dotenv'
 dotenv.config()
 
 // Obtener todas las ligas
@@ -124,6 +124,18 @@ async function getLeagueById (req, res) {
           populate: [
             { path: 'awayTeam' }, // Populate para awayTeam
             { path: 'homeTeam' } // Populate para homeTeam
+          ]
+        }, {
+          path: 'fechas',
+          populate: [
+            { path: 'season' },
+            {
+              path: 'matches',
+              populate: [
+                { path: 'awayTeam' }, // Populate para awayTeam
+                { path: 'homeTeam' } // Populate para homeTeam
+              ]
+            }
           ]
         }
       ]

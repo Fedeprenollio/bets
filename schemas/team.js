@@ -6,9 +6,9 @@ const teamSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  country: String,
-  city: String,
-  league: String
+  country: String
+  // city: String
+  // league: String
 })
 
 export const Team = mongoose.model('Team', teamSchema)
