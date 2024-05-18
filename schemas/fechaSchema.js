@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 
 const fechaSchema = new mongoose.Schema({
   number: String,
+  order: Number,
   season: { type: mongoose.Schema.Types.ObjectId, ref: 'Season' },
   matches: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Match' }],
   isCurrentFecha: Boolean

@@ -175,7 +175,7 @@ Content-Type: application/json
 
 
 ###Obtener fechas de una season
-GET  http://localhost:1234/fecha/66456d6650a401a91720c1e2
+GET  http://localhost:1234/fecha/66477315e620bf8d2d91fbcc
 
 ### Temporada
-GET http://localhost:1234/season/66456d6650a401a91720c1e2
+GET http://localhost:1234/season/66477315e620bf8d2d91fbcc

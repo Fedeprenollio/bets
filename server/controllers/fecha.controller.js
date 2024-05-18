@@ -35,14 +35,17 @@ const setFechaAsCurrent = async (req, res) => {
     // Obtener el ID de la fecha desde los parámetros de la ruta
     const fechaId = req.params.fechaId
 
-    // Buscar la fecha por su ID
+    // Buscar la fecha por su ID y obtener la temporada asociada
     const fecha = await Fecha.findById(fechaId)
     if (!fecha) {
       return res.status(404).json({ message: 'Fecha not found' })
     }
 
-    // Desmarcar cualquier otra fecha como la fecha actual si ya existe
-    await Fecha.updateMany({}, { isCurrentFecha: false })
+    // Obtener la temporada asociada a la fecha
+    const seasonId = fecha.season
+
+    // Desmarcar cualquier otra fecha como la fecha actual en la misma temporada
+    await Fecha.updateMany({ season: seasonId }, { isCurrentFecha: false })
 
     // Marcar la fecha actual
     fecha.isCurrentFecha = true

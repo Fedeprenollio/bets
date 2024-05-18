@@ -144,7 +144,13 @@ async function getLeagueById (req, res) {
     if (!league) {
       return res.status(404).json({ message: 'Liga no encontrada' })
     }
-
+    // Ordenar las fechas por el campo "order" de manera creciente para cada temporada
+    league.season.forEach((season) => {
+      if (season.fechas && Array.isArray(season.fechas)) {
+        season.fechas.sort((a, b) => a.order - b.order)
+      }
+    })
+    console.log('LIGA', league)
     res.json(league)
   } catch (error) {
     res.status(500).json({ message: error.message })

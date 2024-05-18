@@ -250,7 +250,9 @@ const getMatchById = async (req, res, next) => {
     res.send(match)
   } catch (error) {
     console.error('Error fetching match by ID:', error)
-    res.status(500).send({ error: 'An error occurred while fetching match by ID' })
+    res
+      .status(500)
+      .send({ error: 'An error occurred while fetching match by ID' })
   }
 }
 
@@ -306,28 +308,21 @@ const getTeamStats = async (req, res) => {
       upperLimit,
       lessThan = false // Nuevo query para buscar partidos con menos de cierta cantidad
     } = req.query
-    console.log('ENTRA', homeOnly, awayOnly)
     const booleanHomeOnly = homeOnly === 'true'
     const booleanAwayOnly = awayOnly === 'true'
     const boolenaLessThan = lessThan === 'true'
     // let query = { isFinished: true }
     let query = {
-      $and: [
-        { isFinished: true }
-
-      ]
+      $and: [{ isFinished: true }]
     }
 
     if (booleanHomeOnly && !booleanAwayOnly) {
-      console.log('ONLY LOCAL')
       // query = { ...query, 'homeTeam._id': idTeam }
       query.$and.push({ homeTeam: idTeam })
     } else if (booleanAwayOnly && !booleanHomeOnly) {
-      console.log('ONLY VISITOR')
       // query = { ...query, 'awayTeam._id': idTeam }
       query.$and.push({ awayTeam: idTeam })
     } else if (booleanHomeOnly && booleanAwayOnly) {
-      console.log('ONLY AMBOS')
       query = {
         $and: [
           { isFinished: true },
@@ -335,12 +330,12 @@ const getTeamStats = async (req, res) => {
             $or: [
               { homeTeam: idTeam },
               { awayTeam: idTeam }
-            // {
-            //   [`teamStatistics.local.${statistic}`]: { $gte: parseFloat(lowerLimit), $lte: parseFloat(upperLimit) }
-            // },
-            // {
-            //   [`teamStatistics.visitor.${statistic}`]: { $gte: parseFloat(lowerLimit), $lte: parseFloat(upperLimit) }
-            // }
+              // {
+              //   [`teamStatistics.local.${statistic}`]: { $gte: parseFloat(lowerLimit), $lte: parseFloat(upperLimit) }
+              // },
+              // {
+              //   [`teamStatistics.visitor.${statistic}`]: { $gte: parseFloat(lowerLimit), $lte: parseFloat(upperLimit) }
+              // }
             ]
           }
         ]
@@ -374,9 +369,12 @@ const getTeamStats = async (req, res) => {
     const matches = await Match.find(query)
       .sort({ date: -1 })
       .limit(parseInt(matchesCount))
+      .populate({
+        path: 'league',
+        select: 'name' // Selecciona solo el nombre de la liga para la población
+      })
       .populate('homeTeam awayTeam')
-
-    console.log('PARTIDOS', matches)
+      .populate('seasonYear', 'year') // Poblar el año de la temporada
 
     const team = await Team.findById(idTeam)
 
@@ -493,7 +491,9 @@ const getTeamStatsForSeason = async (req, res) => {
   const { seasonId } = req.params
   try {
     // Buscar todos los partidos de la temporada especificada
-    const matches = await Match.find({ seasonYear: seasonId }).populate('homeTeam awayTeam')
+    const matches = await Match.find({ seasonYear: seasonId }).populate(
+      'homeTeam awayTeam'
+    )
 
     // Objeto para almacenar las estadísticas de cada equipo
     const teamStats = {}
@@ -513,7 +513,13 @@ const getTeamStatsForSeason = async (req, res) => {
           corners: 0
         }
       }
-      const { goals: localGoals, offsides: localOffsides, yellowCards: localYellowCards, redCards: localRedCards, corners: localCorners } = match.teamStatistics.local
+      const {
+        goals: localGoals,
+        offsides: localOffsides,
+        yellowCards: localYellowCards,
+        redCards: localRedCards,
+        corners: localCorners
+      } = match.teamStatistics.local
       teamStats[homeTeamId].goals += localGoals || 0
       teamStats[homeTeamId].offsides += localOffsides || 0
       teamStats[homeTeamId].yellowCards += localYellowCards || 0
@@ -533,7 +539,13 @@ const getTeamStatsForSeason = async (req, res) => {
           corners: 0
         }
       }
-      const { goals: visitorGoals, offsides: visitorOffsides, yellowCards: visitorYellowCards, redCards: visitorRedCards, corners: visitorCorners } = match.teamStatistics.visitor
+      const {
+        goals: visitorGoals,
+        offsides: visitorOffsides,
+        yellowCards: visitorYellowCards,
+        redCards: visitorRedCards,
+        corners: visitorCorners
+      } = match.teamStatistics.visitor
       teamStats[awayTeamId].goals += visitorGoals || 0
       teamStats[awayTeamId].offsides += visitorOffsides || 0
       teamStats[awayTeamId].yellowCards += visitorYellowCards || 0
@@ -557,7 +569,11 @@ const getTeamStatsForSeason = async (req, res) => {
     res.json(teamStatsArray)
   } catch (error) {
     console.error('Error fetching team statistics for season:', error)
-    res.status(500).json({ error: 'An error occurred while fetching team statistics for season' })
+    res
+      .status(500)
+      .json({
+        error: 'An error occurred while fetching team statistics for season'
+      })
   }
 }
 

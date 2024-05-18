@@ -41,7 +41,12 @@ const getSeasonById = async (req, res) => {
   try {
     const season = await Season.findById(idSeason).populate([
       { path: 'teams' },
-      { path: 'league' },
+      {
+        path: 'league',
+        populate: {
+          path: 'season'
+        }
+      },
       {
         path: 'fechas',
         populate: {
@@ -51,15 +56,28 @@ const getSeasonById = async (req, res) => {
             { path: 'homeTeam' }
           ]
         }
+      }, {
+        path: 'matches'
       }
     ])
+
     if (!season) {
       return res.status(404).json({ message: 'Season not found' })
     }
 
+    // Ordenar las fechas por el campo "order" en orden creciente
+    season.fechas.sort((a, b) => a.order - b.order)
+
     // Buscar la jornada actual de la temporada
     const currentFecha = season.fechas.find(fecha => fecha.isCurrentFecha)
-    console.log('CURRENT FECHA', currentFecha)
+
+    // Ordenar las temporadas de la liga por el campo "year" en orden creciente
+    season.league.season.sort((a, b) => {
+      const yearA = parseInt(a.year.split('/')[0], 10)
+      const yearB = parseInt(b.year.split('/')[0], 10)
+      return yearA - yearB
+    })
+
     res.json({ season, currentFecha })
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -205,7 +223,7 @@ const addMatchesToSeason = async (req, res) => {
 
     // Obtener la lista de partidos desde el cuerpo de la solicitud
     const matches = req.body.matches
-
+    console.log('DATA DEL MATCH', matches)
     // Buscar la temporada por su ID
     const season = await Season.findById(seasonId)
     if (!season) {
@@ -232,9 +250,9 @@ const addMatchesToSeason = async (req, res) => {
       const match = await Match.create(matchData)
 
       // Obtener o crear la "Fecha" correspondiente (por número de ronda)
-      let fecha = await Fecha.findOne({ number: matchData.round, season: seasonId })
+      let fecha = await Fecha.findOne({ number: matchData.round, season: seasonId, order: matchData.order })
       if (!fecha) {
-        fecha = await Fecha.create({ number: matchData.round, season: seasonId })
+        fecha = await Fecha.create({ number: matchData.round, season: seasonId, order: matchData.order })
         // Agregar la fecha a la temporada
         season.fechas.push(fecha._id)
       } else {
