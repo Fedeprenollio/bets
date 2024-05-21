@@ -22,7 +22,11 @@ const matchSchema = new mongoose.Schema({
       offsides: Number,
       yellowCards: Number,
       redCards: Number,
-      corners: Number
+      corners: Number,
+      shots: Number,
+      shotsOnTarget: Number,
+      possession: Number,
+      foults: Number
 
     },
     visitor: {
@@ -30,7 +34,11 @@ const matchSchema = new mongoose.Schema({
       offsides: Number,
       yellowCards: Number,
       redCards: Number,
-      corners: Number
+      corners: Number,
+      shots: Number,
+      shotsOnTarget: Number,
+      possession: Number,
+      foults: Number
 
     }
   },

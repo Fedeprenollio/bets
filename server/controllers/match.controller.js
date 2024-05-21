@@ -203,33 +203,41 @@ const createMatch = async (req, res) => {
 const updateMatchResult = async (req, res) => {
   try {
     const { goalsHome, goalsAway, teamStatistics } = req.body
-    console.log('++++++', teamStatistics)
+    console.log('BODY', req.body)
     const matchId = req.params.id
     const match = await Match.findById(matchId)
     if (!match) {
       return res.status(404).send('Partido no encontrado')
     }
-    console.log('MATCH', match.homeTeam)
     // Actualizar estadísticas del equipo local
     match.teamStatistics.local.goals = teamStatistics.local.goals
+    match.teamStatistics.local.shots = teamStatistics.local.totalShots
+    match.teamStatistics.local.shotsOnTarget = teamStatistics.local.shotsOnTarget
+    match.teamStatistics.local.possession = teamStatistics.local.possession
+    // faltas
     match.teamStatistics.local.offsides = teamStatistics.local.offsides
     match.teamStatistics.local.yellowCards = teamStatistics.local.yellowCards
-    match.teamStatistics.local.redCards = teamStatistics.local.redCards
     match.teamStatistics.local.corners = teamStatistics.local.corners
+    match.teamStatistics.local.foults = teamStatistics.local.foults
 
+    match.teamStatistics.local.redCards = teamStatistics.local.redCards
     // Actualizar estadísticas del equipo visitante
     match.teamStatistics.visitor.goals = teamStatistics.visitor.goals
     match.teamStatistics.visitor.offsides = teamStatistics.visitor.offsides
-    match.teamStatistics.visitor.yellowCards =
-      teamStatistics.visitor.yellowCards
-    match.teamStatistics.visitor.redCards = teamStatistics.visitor.redCards
+    match.teamStatistics.visitor.yellowCards = teamStatistics.visitor.yellowCards
     match.teamStatistics.visitor.corners = teamStatistics.visitor.corners
+    match.teamStatistics.visitor.possession = teamStatistics.visitor.possession
+    match.teamStatistics.visitor.shotsOnTarget = teamStatistics.visitor.shotsOnTarget
+    match.teamStatistics.visitor.shots = teamStatistics.visitor.totalShots
+    match.teamStatistics.visitor.foults = teamStatistics.visitor.foults
+
+    match.teamStatistics.visitor.redCards = teamStatistics.visitor.redCards
 
     // Actualizar resultado del partido
     match.goalsHome = goalsHome
     match.goalsAway = goalsAway
     match.isFinished = true
-
+    console.log('PARTIDO', match)
     await match.save()
     res.status(200).send(match)
   } catch (error) {
@@ -400,6 +408,7 @@ const getTeamStats = async (req, res) => {
         const teamStats = match.homeTeam.equals(idTeam)
           ? match.teamStatistics.local
           : match.teamStatistics.visitor
+        console.log('teamStats[statistic]', teamStats, statistic)
         const statValue = teamStats[statistic]
 
         stats.total += statValue

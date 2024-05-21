@@ -146,7 +146,7 @@ Content-Type: application/json
 Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGFuaWVsUHVjaG8tIiwiaWF0IjoxNzE0NDA0MTg3LCJleHAiOjE3MTUwMDg5ODd9.qtoXrLx_kgvHe8lfvBm4FRLhgjPqDn3aMT1JXNde6E4
 
 {
-  "username":"pucho2",
+  "username":"pucho",
   "password":"pucho",
   "role":"Admin"
 }
