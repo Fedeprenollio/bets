@@ -12,7 +12,7 @@ matchRouter.get('/team/:idTeam', matchController.getMatchesByTeamId)
 matchRouter.get('/statsAc/:idTeam', matchController.getTeamStats)
 matchRouter.get('/team-stats/:seasonId', matchController.getTeamStatsForSeason)
 
-matchRouter.delete('/:id', verifyToken, matchController.deleteMatchById)
+matchRouter.delete('/:id', matchController.deleteMatchById)
 matchRouter.put('/:id', verifyToken, matchController.updateMatchById)
 
 // import { Router } from "express";
