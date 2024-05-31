@@ -1,3 +1,4 @@
+import * as ss from 'simple-statistics'
 import { Match } from '../../schemas/match.js'
 import { Team } from '../../schemas/team.js'
 import { League } from '../../schemas/leagueSchema.js'
@@ -680,7 +681,6 @@ const getTeamStats = async (req, res) => {
     res.status(500).send('An error occurred while fetching team stats')
   }
 }
-
 const getTeamStatsForSeason = async (req, res) => {
   const { seasonId } = req.params
   try {
@@ -692,72 +692,179 @@ const getTeamStatsForSeason = async (req, res) => {
     // Objeto para almacenar las estadísticas de cada equipo
     const teamStats = {}
 
+    // Función auxiliar para inicializar las estadísticas de un equipo
+    const initializeTeamStats = (teamName) => ({
+      team: teamName,
+      statistics: {
+        goals: { values: [], total: 0 },
+        offsides: { values: [], total: 0 },
+        yellowCards: { values: [], total: 0 },
+        redCards: { values: [], total: 0 },
+        corners: { values: [], total: 0 },
+        shots: { values: [], total: 0 },
+        shotsOnTarget: { values: [], total: 0 },
+        possession: { values: [], total: 0 },
+        fouls: { values: [], total: 0 }
+      },
+      received: {
+        goals: { values: [], total: 0 },
+        offsides: { values: [], total: 0 },
+        yellowCards: { values: [], total: 0 },
+        redCards: { values: [], total: 0 },
+        corners: { values: [], total: 0 },
+        shots: { values: [], total: 0 },
+        shotsOnTarget: { values: [], total: 0 },
+        possession: { values: [], total: 0 },
+        fouls: { values: [], total: 0 }
+      }
+    })
+
     // Iterar sobre cada partido y acumular las estadísticas
     matches.forEach((match) => {
       // Acumular estadísticas del equipo local
       const homeTeamId = match.homeTeam._id
       const homeTeamName = match.homeTeam.name
       if (!teamStats[homeTeamId]) {
-        teamStats[homeTeamId] = {
-          team: homeTeamName,
-          goals: 0,
-          offsides: 0,
-          yellowCards: 0,
-          redCards: 0,
-          corners: 0
-        }
+        teamStats[homeTeamId] = initializeTeamStats(homeTeamName)
       }
       const {
         goals: localGoals,
         offsides: localOffsides,
         yellowCards: localYellowCards,
         redCards: localRedCards,
-        corners: localCorners
+        corners: localCorners,
+        shots: localShots,
+        shotsOnTarget: localShotsOnTarget,
+        possession: localPossession,
+        foults: localFouls
       } = match.teamStatistics.local
-      teamStats[homeTeamId].goals += localGoals || 0
-      teamStats[homeTeamId].offsides += localOffsides || 0
-      teamStats[homeTeamId].yellowCards += localYellowCards || 0
-      teamStats[homeTeamId].redCards += localRedCards || 0
-      teamStats[homeTeamId].corners += localCorners || 0
+      teamStats[homeTeamId].statistics.goals.values.push(localGoals || 0)
+      teamStats[homeTeamId].statistics.goals.total += localGoals || 0
+      teamStats[homeTeamId].statistics.offsides.values.push(localOffsides || 0)
+      teamStats[homeTeamId].statistics.offsides.total += localOffsides || 0
+      teamStats[homeTeamId].statistics.yellowCards.values.push(localYellowCards || 0)
+      teamStats[homeTeamId].statistics.yellowCards.total += localYellowCards || 0
+      teamStats[homeTeamId].statistics.redCards.values.push(localRedCards || 0)
+      teamStats[homeTeamId].statistics.redCards.total += localRedCards || 0
+      teamStats[homeTeamId].statistics.corners.values.push(localCorners || 0)
+      teamStats[homeTeamId].statistics.corners.total += localCorners || 0
+      teamStats[homeTeamId].statistics.shots.values.push(localShots || 0)
+      teamStats[homeTeamId].statistics.shots.total += localShots || 0
+      teamStats[homeTeamId].statistics.shotsOnTarget.values.push(localShotsOnTarget || 0)
+      teamStats[homeTeamId].statistics.shotsOnTarget.total += localShotsOnTarget || 0
+      teamStats[homeTeamId].statistics.possession.values.push(localPossession || 0)
+      teamStats[homeTeamId].statistics.possession.total += localPossession || 0
+      teamStats[homeTeamId].statistics.fouls.values.push(localFouls || 0)
+      teamStats[homeTeamId].statistics.fouls.total += localFouls || 0
 
-      // Acumular estadísticas del equipo visitante
-      const awayTeamId = match.awayTeam._id
-      const awayTeamName = match.awayTeam.name
-      if (!teamStats[awayTeamId]) {
-        teamStats[awayTeamId] = {
-          team: awayTeamName,
-          goals: 0,
-          offsides: 0,
-          yellowCards: 0,
-          redCards: 0,
-          corners: 0
-        }
-      }
+      // Acumular estadísticas recibidas del equipo local
       const {
         goals: visitorGoals,
         offsides: visitorOffsides,
         yellowCards: visitorYellowCards,
         redCards: visitorRedCards,
-        corners: visitorCorners
+        corners: visitorCorners,
+        shots: visitorShots,
+        shotsOnTarget: visitorShotsOnTarget,
+        possession: visitorPossession,
+        foults: visitorFouls
       } = match.teamStatistics.visitor
-      teamStats[awayTeamId].goals += visitorGoals || 0
-      teamStats[awayTeamId].offsides += visitorOffsides || 0
-      teamStats[awayTeamId].yellowCards += visitorYellowCards || 0
-      teamStats[awayTeamId].redCards += visitorRedCards || 0
-      teamStats[awayTeamId].corners += visitorCorners || 0
+      teamStats[homeTeamId].received.goals.values.push(visitorGoals || 0)
+      teamStats[homeTeamId].received.goals.total += visitorGoals || 0
+      teamStats[homeTeamId].received.offsides.values.push(visitorOffsides || 0)
+      teamStats[homeTeamId].received.offsides.total += visitorOffsides || 0
+      teamStats[homeTeamId].received.yellowCards.values.push(visitorYellowCards || 0)
+      teamStats[homeTeamId].received.yellowCards.total += visitorYellowCards || 0
+      teamStats[homeTeamId].received.redCards.values.push(visitorRedCards || 0)
+      teamStats[homeTeamId].received.redCards.total += visitorRedCards || 0
+      teamStats[homeTeamId].received.corners.values.push(visitorCorners || 0)
+      teamStats[homeTeamId].received.corners.total += visitorCorners || 0
+      teamStats[homeTeamId].received.shots.values.push(visitorShots || 0)
+      teamStats[homeTeamId].received.shots.total += visitorShots || 0
+      teamStats[homeTeamId].received.shotsOnTarget.values.push(visitorShotsOnTarget || 0)
+      teamStats[homeTeamId].received.shotsOnTarget.total += visitorShotsOnTarget || 0
+      teamStats[homeTeamId].received.possession.values.push(visitorPossession || 0)
+      teamStats[homeTeamId].received.possession.total += visitorPossession || 0
+      teamStats[homeTeamId].received.fouls.values.push(visitorFouls || 0)
+      teamStats[homeTeamId].received.fouls.total += visitorFouls || 0
+
+      // Acumular estadísticas del equipo visitante
+      const awayTeamId = match.awayTeam._id
+      const awayTeamName = match.awayTeam.name
+      if (!teamStats[awayTeamId]) {
+        teamStats[awayTeamId] = initializeTeamStats(awayTeamName)
+      }
+      teamStats[awayTeamId].statistics.goals.values.push(visitorGoals || 0)
+      teamStats[awayTeamId].statistics.goals.total += visitorGoals || 0
+      teamStats[awayTeamId].statistics.offsides.values.push(visitorOffsides || 0)
+      teamStats[awayTeamId].statistics.offsides.total += visitorOffsides || 0
+      teamStats[awayTeamId].statistics.yellowCards.values.push(visitorYellowCards || 0)
+      teamStats[awayTeamId].statistics.yellowCards.total += visitorYellowCards || 0
+      teamStats[awayTeamId].statistics.redCards.values.push(visitorRedCards || 0)
+      teamStats[awayTeamId].statistics.redCards.total += visitorRedCards || 0
+      teamStats[awayTeamId].statistics.corners.values.push(visitorCorners || 0)
+      teamStats[awayTeamId].statistics.corners.total += visitorCorners || 0
+      teamStats[awayTeamId].statistics.shots.values.push(visitorShots || 0)
+      teamStats[awayTeamId].statistics.shots.total += visitorShots || 0
+      teamStats[awayTeamId].statistics.shotsOnTarget.values.push(visitorShotsOnTarget || 0)
+      teamStats[awayTeamId].statistics.shotsOnTarget.total += visitorShotsOnTarget || 0
+      teamStats[awayTeamId].statistics.possession.values.push(visitorPossession || 0)
+      teamStats[awayTeamId].statistics.possession.total += visitorPossession || 0
+      teamStats[awayTeamId].statistics.fouls.values.push(visitorFouls || 0)
+      teamStats[awayTeamId].statistics.fouls.total += visitorFouls || 0
+
+      // Acumular estadísticas recibidas del equipo visitante
+      teamStats[awayTeamId].received.goals.values.push(localGoals || 0)
+      teamStats[awayTeamId].received.goals.total += localGoals || 0
+      teamStats[awayTeamId].received.offsides.values.push(localOffsides || 0)
+      teamStats[awayTeamId].received.offsides.total += localOffsides || 0
+      teamStats[awayTeamId].received.yellowCards.values.push(localYellowCards || 0)
+      teamStats[awayTeamId].received.yellowCards.total += localYellowCards || 0
+      teamStats[awayTeamId].received.redCards.values.push(localRedCards || 0)
+      teamStats[awayTeamId].received.redCards.total += localRedCards || 0
+      teamStats[awayTeamId].received.corners.values.push(localCorners || 0)
+      teamStats[awayTeamId].received.corners.total += localCorners || 0
+      teamStats[awayTeamId].received.shots.values.push(localShots || 0)
+      teamStats[awayTeamId].received.shots.total += localShots || 0
+      teamStats[awayTeamId].received.shotsOnTarget.values.push(localShotsOnTarget || 0)
+      teamStats[awayTeamId].received.shotsOnTarget.total += localShotsOnTarget || 0
+      teamStats[awayTeamId].received.possession.values.push(localPossession || 0)
+      teamStats[awayTeamId].received.possession.total += localPossession || 0
+      teamStats[awayTeamId].received.fouls.values.push(localFouls || 0)
+      teamStats[awayTeamId].received.fouls.total += localFouls || 0
+    })
+
+    // Función para calcular la mediana, el promedio y la desviación estándar usando simple-statistics
+    const calculateStats = (values) => {
+      if (values.length === 0) return { promedio: 0, mediana: 0, desviacion: 0 }
+
+      const promedio = ss.mean(values)
+      const mediana = ss.median(values)
+      const desviacion = parseFloat(ss.standardDeviation(values).toFixed(2))
+      // parseFloat(ss.standardDeviation(values).toFixed(2))
+      return { promedio, mediana, desviacion }
+    }
+
+    // Añadir estadísticas calculadas a cada equipo
+    Object.values(teamStats).forEach((team) => {
+      Object.keys(team.statistics).forEach((statKey) => {
+        team.statistics[statKey] = {
+          ...team.statistics[statKey],
+          ...calculateStats(team.statistics[statKey].values)
+        }
+        team.received[statKey] = {
+          ...team.received[statKey],
+          ...calculateStats(team.received[statKey].values)
+        }
+      })
     })
 
     // Convertir el objeto de estadísticas de equipos a un array de objetos
     const teamStatsArray = Object.keys(teamStats).map((teamId) => ({
       teamId,
       teamName: teamStats[teamId].team,
-      statistics: {
-        goals: teamStats[teamId].goals,
-        offsides: teamStats[teamId].offsides,
-        yellowCards: teamStats[teamId].yellowCards,
-        redCards: teamStats[teamId].redCards,
-        corners: teamStats[teamId].corners
-      }
+      statistics: teamStats[teamId].statistics,
+      received: teamStats[teamId].received
     }))
 
     res.json(teamStatsArray)
@@ -770,6 +877,96 @@ const getTeamStatsForSeason = async (req, res) => {
       })
   }
 }
+
+// const getTeamStatsForSeason = async (req, res) => {
+//   const { seasonId } = req.params
+//   try {
+//     // Buscar todos los partidos de la temporada especificada
+//     const matches = await Match.find({ seasonYear: seasonId }).populate(
+//       'homeTeam awayTeam'
+//     )
+
+//     // Objeto para almacenar las estadísticas de cada equipo
+//     const teamStats = {}
+
+//     // Iterar sobre cada partido y acumular las estadísticas
+//     matches.forEach((match) => {
+//       // Acumular estadísticas del equipo local
+//       const homeTeamId = match.homeTeam._id
+//       const homeTeamName = match.homeTeam.name
+//       if (!teamStats[homeTeamId]) {
+//         teamStats[homeTeamId] = {
+//           team: homeTeamName,
+//           goals: 0,
+//           offsides: 0,
+//           yellowCards: 0,
+//           redCards: 0,
+//           corners: 0
+//         }
+//       }
+//       const {
+//         goals: localGoals,
+//         offsides: localOffsides,
+//         yellowCards: localYellowCards,
+//         redCards: localRedCards,
+//         corners: localCorners
+//       } = match.teamStatistics.local
+//       teamStats[homeTeamId].goals += localGoals || 0
+//       teamStats[homeTeamId].offsides += localOffsides || 0
+//       teamStats[homeTeamId].yellowCards += localYellowCards || 0
+//       teamStats[homeTeamId].redCards += localRedCards || 0
+//       teamStats[homeTeamId].corners += localCorners || 0
+
+//       // Acumular estadísticas del equipo visitante
+//       const awayTeamId = match.awayTeam._id
+//       const awayTeamName = match.awayTeam.name
+//       if (!teamStats[awayTeamId]) {
+//         teamStats[awayTeamId] = {
+//           team: awayTeamName,
+//           goals: 0,
+//           offsides: 0,
+//           yellowCards: 0,
+//           redCards: 0,
+//           corners: 0
+//         }
+//       }
+//       const {
+//         goals: visitorGoals,
+//         offsides: visitorOffsides,
+//         yellowCards: visitorYellowCards,
+//         redCards: visitorRedCards,
+//         corners: visitorCorners
+//       } = match.teamStatistics.visitor
+//       teamStats[awayTeamId].goals += visitorGoals || 0
+//       teamStats[awayTeamId].offsides += visitorOffsides || 0
+//       teamStats[awayTeamId].yellowCards += visitorYellowCards || 0
+//       teamStats[awayTeamId].redCards += visitorRedCards || 0
+//       teamStats[awayTeamId].corners += visitorCorners || 0
+//     })
+
+//     // Convertir el objeto de estadísticas de equipos a un array de objetos
+//     const teamStatsArray = Object.keys(teamStats).map((teamId) => ({
+//       teamId,
+//       teamName: teamStats[teamId].team,
+//       statistics: {
+//         goals: teamStats[teamId].goals,
+//         offsides: teamStats[teamId].offsides,
+//         yellowCards: teamStats[teamId].yellowCards,
+//         redCards: teamStats[teamId].redCards,
+//         corners: teamStats[teamId].corners
+//       }
+//     }))
+
+//     res.json(teamStatsArray)
+//   } catch (error) {
+//     console.error('Error fetching team statistics for season:', error)
+//     res
+//       .status(500)
+//       .json({
+//         error: 'An error occurred while fetching team statistics for season'
+//       })
+//   }
+// }
 
 // Controlador para eliminar un partido por su ID
 const deleteMatchById = async (req, res) => {
