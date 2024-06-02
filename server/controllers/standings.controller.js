@@ -1,9 +1,105 @@
 import { Standings } from '../../schemas/standingsSchema.js'
 import { Match } from '../../schemas/match.js'
+import { League } from '../../schemas/leagueSchema.js'
 import mongoose from 'mongoose'
+import { Season } from '../../schemas/seasonSchema.js'
+// En caso de igualdad de puntos esta funcion de desepate funciona:
+// const tieBreaker = (teamA, teamB, country) => {
+//   if (country === 'Argentina') {
+//     if (teamA.allStats.goalDifference !== teamB.allStats.goalDifference) {
+//       return teamB.allStats.goalDifference - teamA.allStats.goalDifference
+//     } else {
+//       return teamB.allStats.goalsFor - teamA.allStats.goalsFor
+//     }
+//   } else if (country === 'Inglaterra') {
+//     if (teamA.allStats.goalDifference !== teamB.allStats.goalDifference) {
+//       return teamB.allStats.goalDifference - teamA.allStats.goalDifference
+//     } else {
+//       return teamB.allStats.goalsFor - teamA.allStats.goalsFor
+//     }
+//   } else if (country === 'España') {
+//     if (teamA.allStats.goalDifference !== teamB.allStats.goalDifference) {
+//       return teamB.allStats.goalDifference - teamA.allStats.goalDifference
+//     } else {
+//       return teamB.allStats.goalsFor - teamA.allStats.goalsFor
+//     }
+//   }
+//   return 0
+// }
+// ESTA aun no ha sido testeada para las condiones
+// 2do-Goles a favor: Si hay un empate en la diferencia de goles, el equipo que haya marcado más goles durante la temporada se posiciona más alto en la tabla.
 
-const calculateStats = (matches) => {
-  const teamStatsMap = new Map()
+// 3ro . Resultado en enfrentamientos directos: Si dos o más equipos tienen igualdad en la diferencia de goles y en los goles a favor, se considera el resultado de los enfrentamientos directos entre los equipos implicados. El equipo que haya obtenido mejores resultados en los enfrentamientos directos se clasifica por encima.
+
+// 4to Diferencia de goles en enfrentamientos directos: Si el empate persiste, se considera la diferencia de goles en los enfrentamientos directos entre los equipos implicados.
+
+// 5to- Goles a favor en enfrentamientos directos: Si todavía hay empate, se mira cuál equipo ha marcado más goles en los enfrentamientos directos entre los equipos implicados.:
+const tieBreaker = (teamA, teamB, country, matches) => {
+  if (country === 'Argentina') {
+    if (teamA.allStats.goalDifference !== teamB.allStats.goalDifference) {
+      return teamB.allStats.goalDifference - teamA.allStats.goalDifference
+    } else if (teamA.allStats.goalsFor !== teamB.allStats.goalsFor) {
+      return teamB.allStats.goalsFor - teamA.allStats.goalsFor
+    } else {
+      const directMatchResults = matches.filter(match =>
+        (match.homeTeam._id.toString() === teamA.team._id.toString() && match.awayTeam._id.toString() === teamB.team._id.toString()) ||
+        (match.homeTeam._id.toString() === teamB.team._id.toString() && match.awayTeam._id.toString() === teamA.team._id.toString())
+      )
+
+      const teamAResults = { points: 0, goalDifference: 0, goalsFor: 0 }
+      const teamBResults = { points: 0, goalDifference: 0, goalsFor: 0 }
+
+      directMatchResults.forEach(match => {
+        if (match.homeTeam._id.toString() === teamA.team._id.toString()) {
+          teamAResults.goalsFor += match.teamStatistics.local.goals
+          teamAResults.goalDifference += match.teamStatistics.local.goals - match.teamStatistics.visitor.goals
+          teamBResults.goalsFor += match.teamStatistics.visitor.goals
+          teamBResults.goalDifference += match.teamStatistics.visitor.goals - match.teamStatistics.local.goals
+
+          if (match.teamStatistics.local.goals > match.teamStatistics.visitor.goals) {
+            teamAResults.points += 3
+          } else if (match.teamStatistics.local.goals < match.teamStatistics.visitor.goals) {
+            teamBResults.points += 3
+          } else {
+            teamAResults.points += 1
+            teamBResults.points += 1
+          }
+        } else {
+          teamAResults.goalsFor += match.teamStatistics.visitor.goals
+          teamAResults.goalDifference += match.teamStatistics.visitor.goals - match.teamStatistics.local.goals
+          teamBResults.goalsFor += match.teamStatistics.local.goals
+          teamBResults.goalDifference += match.teamStatistics.local.goals - match.teamStatistics.visitor.goals
+
+          if (match.teamStatistics.visitor.goals > match.teamStatistics.local.goals) {
+            teamAResults.points += 3
+          } else if (match.teamStatistics.visitor.goals < match.teamStatistics.local.goals) {
+            teamBResults.points += 3
+          } else {
+            teamAResults.points += 1
+            teamBResults.points += 1
+          }
+        }
+      })
+
+      if (teamAResults.points !== teamBResults.points) {
+        return teamBResults.points - teamAResults.points
+      } else if (teamAResults.goalDifference !== teamBResults.goalDifference) {
+        return teamBResults.goalDifference - teamAResults.goalDifference
+      } else {
+        return teamBResults.goalsFor - teamAResults.goalsFor
+      }
+    }
+  } else if (country === 'Inglaterra' || country === 'España') {
+    if (teamA.allStats.goalDifference !== teamB.allStats.goalDifference) {
+      return teamB.allStats.goalDifference - teamA.allStats.goalDifference
+    } else {
+      return teamB.allStats.goalsFor - teamA.allStats.goalsFor
+    }
+  }
+  return 0
+}
+const calculateStats = (matches, country) => {
+  const teamStatsMap = {}
 
   matches.forEach((match) => {
     const { homeTeam, awayTeam, teamStatistics } = match
@@ -11,8 +107,8 @@ const calculateStats = (matches) => {
     const awayGoals = teamStatistics.visitor.goals
 
     const updateTeamStats = (team, goalsFor, goalsAgainst, isHome) => {
-      if (!teamStatsMap.has(team._id)) {
-        teamStatsMap.set(team._id, {
+      if (!teamStatsMap[team._id]) {
+        teamStatsMap[team._id] = {
           team,
           allStats: {
             matchesPlayed: 0,
@@ -44,10 +140,10 @@ const calculateStats = (matches) => {
             goalDifference: 0,
             points: 0
           }
-        })
+        }
       }
 
-      const stats = teamStatsMap.get(team._id)
+      const stats = teamStatsMap[team._id]
 
       stats.allStats.matchesPlayed++
       if (isHome) {
@@ -101,17 +197,33 @@ const calculateStats = (matches) => {
     updateTeamStats(awayTeam, awayGoals, homeGoals, false)
   })
 
-  const teamStats = Array.from(teamStatsMap.values())
+  const teamStats = Object.values(teamStatsMap)
+
+  teamStats.sort((teamA, teamB) => {
+    if (teamA.allStats.points !== teamB.allStats.points) {
+      return teamB.allStats.points - teamA.allStats.points
+    } else {
+      return tieBreaker(teamA, teamB, country, matches)
+    }
+  })
 
   return teamStats
 }
-
 const getStandingsBySeason = async (req, res) => {
   try {
     const { seasonId } = req.params
     const allMatches = await Match.find({ seasonYear: seasonId, isFinished: true }).populate('homeTeam').populate('awayTeam')
-    const allStats = calculateStats(allMatches)
+    const season = await Season.findById(seasonId)
+    const leagueId = season.league
+    const league = await League.findById(leagueId)
 
+    console.log('PAISS', league.country)
+    if (!league.country) {
+      return res.status(404).json({ message: 'No country found for the specified season' })
+    }
+
+    // const allStats = calculateStats(allMatches)
+    const allStats = calculateStats(allMatches, league.country)
     // Map each team data to include populated team information
     const populatedStandings = allStats.map((teamData) => ({
       team: teamData.team,
