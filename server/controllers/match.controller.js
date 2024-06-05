@@ -5,6 +5,7 @@ import { League } from '../../schemas/leagueSchema.js'
 import { Fecha } from '../../schemas/fechaSchema.js'
 import { Season } from '../../schemas/seasonSchema.js'
 import { PositionTable } from '../../schemas/tablePositionsSchema.js'
+import { calculatePositionTables } from '../services/tablePositions.js'
 // Controlador para obtener todos los partidos con filtros opcionales
 const getAllMatches = async (req, res) => {
   try {
@@ -825,10 +826,236 @@ const getMatchesByTeamId = async (req, res) => {
 //     res.status(500).send('An error occurred while fetching team stats')
 //   }
 // }
+
 // Controlador para obtener estadísticas de un equipo (EN PRUEBA)
+// const getTeamStats = async (req, res) => {
+//   try {
+//     const idTeam = req.params.idTeam
+//     console.log('idTeam', idTeam)
+//     const {
+//       statistic,
+//       matchesCount = 5,
+//       homeOnly = true,
+//       awayOnly = true,
+//       lowerLimit,
+//       upperLimit,
+//       lessThan = false,
+//       currentSeason,
+//       position
+//     } = req.query
+
+//     const booleanHomeOnly = homeOnly === 'true'
+//     const booleanAwayOnly = awayOnly === 'true'
+//     const booleanLessThan = lessThan === 'true'
+
+//     const query = {
+//       $and: [{ isFinished: true }]
+//     }
+
+//     if (booleanHomeOnly && !booleanAwayOnly) {
+//       query.$and.push({ homeTeam: idTeam })
+//     } else if (booleanAwayOnly && !booleanHomeOnly) {
+//       query.$and.push({ awayTeam: idTeam })
+//     } else if (booleanHomeOnly && booleanAwayOnly) {
+//       query.$and.push({
+//         $or: [
+//           { homeTeam: idTeam },
+//           { awayTeam: idTeam }
+//         ]
+//       })
+//     } else {
+//       const emptyStats = {
+//         matchesTotalFinished: 0,
+//         few: 0,
+//         many: 0,
+//         total: 0,
+//         values: [] // Incluir un array vacío para los valores
+//       }
+
+//       const allStats = {
+//         teamId: idTeam,
+//         teamName: 'Nombre del Equipo',
+//         matches: [],
+//         matchesCount: 0,
+//         homeOnly,
+//         awayOnly,
+//         [statistic]: emptyStats,
+//         lessThan,
+//         receivedStats: emptyStats
+//       }
+//       return res.status(200).json(allStats)
+//     }
+
+//     if (currentSeason && position) {
+//       const [start, end] = position.split('-').map(Number)
+
+//       const season = await Season.findById(currentSeason)
+
+//       if (!season) {
+//         return res.status(404).json({ message: 'Current season not found' })
+//       }
+
+//       const generalPositionTableId = season.positionTables.general
+
+//       if (!generalPositionTableId) {
+//         return res.status(404).json({ message: 'General position table not found' })
+//         await calculatePositionTables(currentSeason)
+//       }
+
+//       const generalPositionTable = await PositionTable.findById(generalPositionTableId).populate('positions.team')
+
+//       if (!generalPositionTable || !generalPositionTable.positions) {
+//         return res.status(404).json({ message: 'Positions not found' })
+//       }
+
+//       const teamsInRange = generalPositionTable.positions
+//         .filter(position => position.puesto >= start && position.puesto <= end)
+//         .map(position => position.team._id.toString())
+
+//       if (teamsInRange.length === 0) {
+//         return res.status(404).json({ message: 'No teams found in the specified range' })
+//       }
+
+//       query.$and.push({
+//         $or: [
+//           { homeTeam: idTeam, awayTeam: { $in: teamsInRange } },
+//           { awayTeam: idTeam, homeTeam: { $in: teamsInRange } }
+//         ]
+//       })
+//     }
+
+//     const matches = await Match.find(query)
+//       .sort({ date: -1 })
+//       .limit(parseInt(matchesCount))
+//       .populate({
+//         path: 'league',
+//         select: 'name'
+//       })
+//       .populate('homeTeam awayTeam')
+//       .populate('seasonYear', 'year')
+
+//     const team = await Team.findById(idTeam)
+
+//     const generateStats = (matches, statistic, lowerLimit, upperLimit, isReceived = false) => {
+//       const stats = {
+//         matchesTotalFinished: matches?.length || 0,
+//         few: 0,
+//         many: 0,
+//         total: 0,
+//         values: [] // Array para almacenar los valores utilizados
+//       }
+
+//       const ranges = []
+//       for (let i = parseFloat(lowerLimit); i <= parseFloat(upperLimit); i++) {
+//         ranges.push(i)
+//       }
+
+//       ranges.forEach((range) => {
+//         const key = `matchesWith${range.toString().replace('.', '_')}`
+//         stats[key] = 0
+//       })
+
+//       matches.forEach((match) => {
+//         const teamStats = match.homeTeam.equals(idTeam)
+//           ? isReceived ? match.teamStatistics.visitor : match.teamStatistics.local
+//           : isReceived ? match.teamStatistics.local : match.teamStatistics.visitor
+
+//         const statValue = teamStats[statistic]
+//         stats.total += statValue
+//         stats.values.push(statValue) // Agregar el valor al array
+
+//         ranges.forEach((range) => {
+//           const key = `matchesWith${range.toString().replace('.', '_')}`
+//           if (booleanLessThan) {
+//             if (statValue < range) {
+//               stats[key]++
+//             }
+//           } else {
+//             if (statValue >= range) {
+//               stats[key]++
+//             }
+//           }
+//         })
+
+//         if (booleanLessThan) {
+//           if (statValue < lowerLimit) {
+//             stats.few++
+//           }
+//         } else {
+//           if (statValue >= lowerLimit) {
+//             stats.few++
+//           }
+//         }
+//       })
+
+//       return stats
+//     }
+
+//     const stats = generateStats(
+//       matches,
+//       statistic,
+//       parseFloat(lowerLimit),
+//       parseFloat(upperLimit)
+//     )
+
+//     const receivedStats = generateStats(
+//       matches,
+//       statistic,
+//       parseFloat(lowerLimit),
+//       parseFloat(upperLimit),
+//       true
+//     )
+
+//     const allStats = {
+//       teamId: team._id,
+//       teamName: team.name,
+//       matches,
+//       matchesCount,
+//       homeOnly,
+//       awayOnly,
+//       [statistic]: { ...stats, receivedStats },
+//       lessThan,
+//       receivedStats, // Agregar las estadísticas recibidas
+//       matchesWithStatistic: matches.filter((match) => {
+//         const teamStats = match.homeTeam.equals(idTeam)
+//           ? match.teamStatistics.local
+//           : match.teamStatistics.visitor
+//         const statValue = teamStats[statistic]
+//         if (booleanLessThan) {
+//           return statValue < parseFloat(upperLimit)
+//         } else {
+//           return statValue >= parseFloat(lowerLimit)
+//         }
+//       }),
+//       matchesWithRange: matches.filter((match) => {
+//         const teamStats = match.homeTeam.equals(idTeam)
+//           ? match.teamStatistics.local
+//           : match.teamStatistics.visitor
+//         const statValue = teamStats[statistic]
+//         if (booleanLessThan) {
+//           return (
+//             parseFloat(lowerLimit) < statValue &&
+//             statValue < parseFloat(upperLimit)
+//           )
+//         } else {
+//           return (
+//             parseFloat(lowerLimit) <= statValue &&
+//             statValue <= parseFloat(upperLimit)
+//           )
+//         }
+//       })
+//     }
+//     res.status(200).json(allStats)
+//   } catch (error) {
+//     console.error('Error fetching team stats:', error)
+//     res.status(500).send('An error occurred while fetching team stats')
+//   }
+// }
+
 const getTeamStats = async (req, res) => {
   try {
     const idTeam = req.params.idTeam
+    console.log('idTeam', idTeam)
     const {
       statistic,
       matchesCount = 5,
@@ -840,11 +1067,11 @@ const getTeamStats = async (req, res) => {
       currentSeason,
       position
     } = req.query
-
     const booleanHomeOnly = homeOnly === 'true'
     const booleanAwayOnly = awayOnly === 'true'
     const booleanLessThan = lessThan === 'true'
-
+    const booleanPosition = position !== 'false'
+    console.log('booleanPosition', booleanPosition)
     const query = {
       $and: [{ isFinished: true }]
     }
@@ -883,7 +1110,7 @@ const getTeamStats = async (req, res) => {
       return res.status(200).json(allStats)
     }
 
-    if (currentSeason && position) {
+    if (booleanPosition) {
       const [start, end] = position.split('-').map(Number)
 
       const season = await Season.findById(currentSeason)
@@ -895,7 +1122,7 @@ const getTeamStats = async (req, res) => {
       const generalPositionTableId = season.positionTables.general
 
       if (!generalPositionTableId) {
-        return res.status(404).json({ message: 'General position table not found' })
+        await calculatePositionTables(currentSeason)
       }
 
       const generalPositionTable = await PositionTable.findById(generalPositionTableId).populate('positions.team')
@@ -908,9 +1135,23 @@ const getTeamStats = async (req, res) => {
         .filter(position => position.puesto >= start && position.puesto <= end)
         .map(position => position.team._id.toString())
 
-      if (teamsInRange.length === 0) {
-        return res.status(404).json({ message: 'No teams found in the specified range' })
-      }
+      // if (teamsInRange.length === 0) {
+      //   // return res.status(404).json({ message: 'No teams found in the specified range' })
+      //   const allStats = {
+      //     teamId: null,
+      //     teamName: null,
+      //     matches: [],
+      //     matchesCount,
+      //     homeOnly,
+      //     awayOnly,
+      //     [statistic]: null,
+      //     lessThan,
+      //     receivedStats: null, // Agregar las estadísticas recibidas
+      //     matchesWithStatistic: {},
+      //     matchesWithRange: {}
+      //   }
+      //   return res.status(200).json(allStats)
+      // }
 
       query.$and.push({
         $or: [
