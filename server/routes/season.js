@@ -235,3 +235,5 @@ seasonRouter.get('/:id/matches', controllers.getSeasonMatchesByRound)
 //     res.status(500).json({ message: error.message })
 //   }
 // })
+
+seasonRouter.get('/:seasonId/positions', controllers.getTablePosition)

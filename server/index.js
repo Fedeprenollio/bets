@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 1234
 const app = express()
 
 const corsOptions = {
-  origin: ['http://localhost:5173', 'https://bet-reason.vercel.app'], // Sin coma después del último elemento
+  origin: ['http://localhost:5173', 'https://bet-reason.vercel.app', 'http://localhost:5174'], // Sin coma después del último elemento
   credentials: true // Habilita el envío de credenciales en las solicitudes CORS
 }
 
@@ -55,7 +55,12 @@ app.use((req, res, next) => {
 //   .catch(e => console.log(e))
 
 async function main () {
-  await mongoose.connect(URI_DB)
+  await mongoose.connect(URI_DB, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 30000, // 30 segundos
+    socketTimeoutMS: 45000 // 45 segundos
+  })
 }
 
 await main().catch(err => console.log(err))

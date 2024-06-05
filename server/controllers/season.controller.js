@@ -3,6 +3,7 @@ import { Season } from '../../schemas/seasonSchema.js'
 import { League } from '../../schemas/leagueSchema.js'
 import { Match } from '../../schemas/match.js'
 import { Fecha } from '../../schemas/fechaSchema.js'
+import { calculatePositionTables } from '../services/tablePositions.js'
 
 // Controlador para crear una nueva temporada
 const createSeason = async (req, res) => {
@@ -58,6 +59,14 @@ const getSeasonById = async (req, res) => {
         }
       }, {
         path: 'matches'
+      }, {
+        path: 'positionTables.general'
+      },
+      {
+        path: 'positionTables.home'
+      },
+      {
+        path: 'positionTables.away'
       }
     ])
 
@@ -317,6 +326,16 @@ const getSeasonMatchesByRound = async (req, res) => {
   }
 }
 
+const getTablePosition = async (req, res) => {
+  try {
+    const { seasonId } = req.params
+    const positions = await calculatePositionTables(seasonId)
+    res.json(positions)
+  } catch (error) {
+    res.status(500).send({ error: error.message })
+  }
+}
+
 export const controllers = {
   createSeason,
   getAllSeasons,
@@ -326,6 +345,7 @@ export const controllers = {
   getSeasonsByLeagueId,
   addMatchesToSeason,
   getSeasonMatchesByRound,
-  isCurrentSeason
+  isCurrentSeason,
+  getTablePosition
 
 }

@@ -3,6 +3,7 @@ import { Team } from '../../schemas/team.js'
 import { Match } from '../../schemas/match.js'
 import { methods as authorization } from '../middleware/authentication.js'
 import { verifyToken } from '../middleware/verifyToken .js'
+import { Season } from '../../schemas/seasonSchema.js'
 
 export const teamRouter = Router()
 
@@ -83,3 +84,44 @@ teamRouter.delete('/:id', async (req, res) => {
 //     res.status(500).json({ message: 'Error al eliminar el equipo' })
 //   }
 // })
+// Ruta para obtener las ligas y temporadas de un equipo
+teamRouter.get('/:id/leagues-seasons', async (req, res) => {
+  const teamId = req.params.id
+  try {
+    const team = await Team.findById(teamId)
+    if (!team) {
+      return res.status(404).send({ message: 'Team not found' })
+    }
+
+    // Buscar temporadas donde el equipo ha jugado
+    const seasons = await Season.find({ teams: teamId }).populate('league')
+
+    if (!seasons.length) {
+      return res.status(404).send({ message: 'No seasons found for this team' })
+    }
+
+    // Encontrar la temporada actual
+    const currentSeason = seasons.find(season => season.isCurrentSeason)
+
+    // Crear un mapa de ligas y sus respectivas temporadas
+    const leaguesSeasons = seasons.reduce((acc, season) => {
+      const leagueId = season.league._id
+      if (!acc[leagueId]) {
+        acc[leagueId] = {
+          league: season.league,
+          seasons: []
+        }
+      }
+      acc[leagueId].seasons.push(season)
+      return acc
+    }, {})
+
+    res.send({
+      leaguesSeasons,
+      currentSeason
+    })
+  } catch (error) {
+    console.error('Error fetching leagues and seasons:', error)
+    res.status(500).send({ message: 'An error occurred while fetching leagues and seasons' })
+  }
+})

@@ -31,6 +31,20 @@ const seasonSchema = new mongoose.Schema({
   standings: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Standing'
+  },
+  positionTables: {
+    general: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PositionTable'
+    },
+    home: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PositionTable'
+    },
+    away: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PositionTable'
+    }
   }
 })
 
