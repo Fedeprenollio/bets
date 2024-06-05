@@ -1051,10 +1051,8 @@ const getTeamStats = async (req, res) => {
 const getTeamStatsForSeason = async (req, res) => {
   const { seasonId } = req.params
   try {
-    // Buscar todos los partidos de la temporada especificada
-    const matches = await Match.find({ seasonYear: seasonId }).populate(
-      'homeTeam awayTeam'
-    )
+    // Buscar todos los partidos de la temporada especificada que estén finalizados
+    const matches = await Match.find({ seasonYear: seasonId, isFinished: true }).populate('homeTeam awayTeam')
 
     // Objeto para almacenar las estadísticas de cada equipo
     const teamStats = {}
