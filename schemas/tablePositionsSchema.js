@@ -8,8 +8,12 @@ const positionTableSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['general', 'home', 'away'],
+    enum: ['general', 'home', 'away', 'zone-general', 'zone-home', 'zone-away'],
     required: true
+  },
+  zone: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Zone'
   },
   positions: [{
     team: {
@@ -27,6 +31,6 @@ const positionTableSchema = new mongoose.Schema({
     points: { type: Number, default: 0 },
     puesto: { type: Number } // Agrega el campo 'puesto' aquí
   }]
-})
+}, { versionKey: false })
 
 export const PositionTable = mongoose.model('PositionTable', positionTableSchema)

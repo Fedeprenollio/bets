@@ -6,6 +6,10 @@ import { Fecha } from '../../schemas/fechaSchema.js'
 import { Season } from '../../schemas/seasonSchema.js'
 import { PositionTable } from '../../schemas/tablePositionsSchema.js'
 import { calculatePositionTables } from '../services/tablePositions.js'
+import { Zone } from '../../schemas/zoneSchema.js'
+import { getMatchesAndStats } from '../services/getMatchesAndStats .js'
+import { calculatePositionTablesZone } from '../services/getTablePositionsZone.js'
+import { updateSeasonPositionTable, updateZonePositionTablesFromGeneral } from '../services/updatePositionTables.js'
 // Controlador para obtener todos los partidos con filtros opcionales
 const getAllMatches = async (req, res) => {
   try {
@@ -243,12 +247,10 @@ const createMatch = async (req, res) => {
 const updateMatchResult = async (req, res) => {
   try {
     const { goalsHome, goalsAway, teamStatistics } = req.body
-    console.log('goalsHome', goalsHome)
     const matchId = req.params.id
 
     // Buscar el partido por ID
     const match = await Match.findById(matchId)
-    console.log('caca', match)
     if (!match) {
       return res.status(404).send('Partido no encontrado')
     }
@@ -278,7 +280,6 @@ const updateMatchResult = async (req, res) => {
     await match.save()
 
     // Actualizar la tabla de posiciones
-    console.log('match.seasonYear, match.league', match.seasonYear, match.league)
     // await updatePositionTable(match.seasonYear, match.league)
 
     res.status(200).send(match)
@@ -288,111 +289,14 @@ const updateMatchResult = async (req, res) => {
   }
 }
 
-const updatePositionTable = async (seasonId, leagueId) => {
-  console.log('pepe')
-  try {
-    // Obtener todos los partidos terminados de la temporada y liga especificada
-    const matches = await Match.find({ seasonYear: seasonId, league: leagueId, isFinished: true })
-    console.log('matches', matches)
-    // Buscar la tabla de posiciones existente
-    let positionTable = await PositionTable.findOne({ seasonId, leagueId })
-    const teamStatsMap = {}
-
-    const updateTeamStats = (teamId, isHome, goalsFor, goalsAgainst) => {
-      if (!teamStatsMap[teamId]) {
-        teamStatsMap[teamId] = {
-          overall: { teamId, matchesPlayed: 0, matchesWon: 0, matchesLost: 0, matchesDrawn: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0 },
-          home: { teamId, matchesPlayed: 0, matchesWon: 0, matchesLost: 0, matchesDrawn: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0 },
-          away: { teamId, matchesPlayed: 0, matchesWon: 0, matchesLost: 0, matchesDrawn: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0 }
-        }
-      }
-
-      const stats = teamStatsMap[teamId]
-
-      stats.overall.matchesPlayed++
-      if (isHome) {
-        stats.home.matchesPlayed++
-      } else {
-        stats.away.matchesPlayed++
-      }
-
-      stats.overall.goalsFor += goalsFor
-      stats.overall.goalsAgainst += goalsAgainst
-      if (isHome) {
-        stats.home.goalsFor += goalsFor
-        stats.home.goalsAgainst += goalsAgainst
-      } else {
-        stats.away.goalsFor += goalsFor
-        stats.away.goalsAgainst += goalsAgainst
-      }
-
-      if (goalsFor > goalsAgainst) {
-        stats.overall.matchesWon++
-        if (isHome) {
-          stats.home.matchesWon++
-        } else {
-          stats.away.matchesWon++
-        }
-      } else if (goalsFor < goalsAgainst) {
-        stats.overall.matchesLost++
-        if (isHome) {
-          stats.home.matchesLost++
-        } else {
-          stats.away.matchesLost++
-        }
-      } else {
-        stats.overall.matchesDrawn++
-        if (isHome) {
-          stats.home.matchesDrawn++
-        } else {
-          stats.away.matchesDrawn++
-        }
-      }
-
-      stats.overall.goalDifference = stats.overall.goalsFor - stats.overall.goalsAgainst
-      stats.overall.points = stats.overall.matchesWon * 3 + stats.overall.matchesDrawn
-      stats.home.goalDifference = stats.home.goalsFor - stats.home.goalsAgainst
-      stats.home.points = stats.home.matchesWon * 3 + stats.home.matchesDrawn
-      stats.away.goalDifference = stats.away.goalsFor - stats.away.goalsAgainst
-      stats.away.points = stats.away.matchesWon * 3 + stats.away.matchesDrawn
-    }
-
-    matches.forEach(match => {
-      const { homeTeam, awayTeam, goalsHome, goalsAway } = match
-      updateTeamStats(homeTeam, true, goalsHome, goalsAway)
-      updateTeamStats(awayTeam, false, goalsAway, goalsHome)
-    })
-
-    const overallStats = Object.values(teamStatsMap).map(stats => stats.overall)
-    const homeStats = Object.values(teamStatsMap).map(stats => stats.home)
-    const awayStats = Object.values(teamStatsMap).map(stats => stats.away)
-
-    if (positionTable) {
-      positionTable.overallStats = overallStats
-      positionTable.homeStats = homeStats
-      positionTable.awayStats = awayStats
-      positionTable.lastUpdated = new Date()
-      await positionTable.save()
-    } else {
-      positionTable = new PositionTable({
-        seasonId,
-        leagueId,
-        overallStats,
-        homeStats,
-        awayStats,
-        lastUpdated: new Date()
-      })
-      await positionTable.save()
-    }
-  } catch (error) {
-    console.error('Error updating position table:', error)
-  }
-}
-
 // Controlador para obtener un partido por su ID
 const getMatchById = async (req, res, next) => {
   try {
-    const match = await Match.findById(req.params.id).populate(
+    const id = req.params.id
+    if (!id) {
+      return res.status(404).send({ message: 'Id de partido no ingresado' })
+    }
+    const match = await Match.findById(id).populate(
       'awayTeam homeTeam league'
     )
     if (!match) {
@@ -423,7 +327,6 @@ const getMatchesByTeamId = async (req, res) => {
         populate: { path: 'league' } // Populate para la información completa de la liga del equipo visitante
       })
       .populate('league seasonYear') // Populate para la información completa de la liga y la temporada
-    console.log('NNNNN', homeMatches)
     // Buscar todos los partidos en los que el equipo participó como visitante
     const awayMatches = await Match.find({ awayTeam: idTeam })
       .populate({
@@ -637,6 +540,7 @@ const getMatchesByTeamId = async (req, res) => {
 //     res.status(500).send('An error occurred while fetching team stats')
 //   }
 // }
+
 // Controlador para obtener estadísticas de un equipo
 // const getTeamStats = async (req, res) => {
 //   try {
@@ -827,11 +731,9 @@ const getMatchesByTeamId = async (req, res) => {
 //   }
 // }
 
-// Controlador para obtener estadísticas de un equipo (EN PRUEBA)
 // const getTeamStats = async (req, res) => {
 //   try {
 //     const idTeam = req.params.idTeam
-//     console.log('idTeam', idTeam)
 //     const {
 //       statistic,
 //       matchesCount = 5,
@@ -843,11 +745,11 @@ const getMatchesByTeamId = async (req, res) => {
 //       currentSeason,
 //       position
 //     } = req.query
-
+//     console.log('currentSeason:', currentSeason)
 //     const booleanHomeOnly = homeOnly === 'true'
 //     const booleanAwayOnly = awayOnly === 'true'
 //     const booleanLessThan = lessThan === 'true'
-
+//     const booleanPosition = position !== 'false'
 //     const query = {
 //       $and: [{ isFinished: true }]
 //     }
@@ -886,7 +788,7 @@ const getMatchesByTeamId = async (req, res) => {
 //       return res.status(200).json(allStats)
 //     }
 
-//     if (currentSeason && position) {
+//     if (booleanPosition) {
 //       const [start, end] = position.split('-').map(Number)
 
 //       const season = await Season.findById(currentSeason)
@@ -898,7 +800,6 @@ const getMatchesByTeamId = async (req, res) => {
 //       const generalPositionTableId = season.positionTables.general
 
 //       if (!generalPositionTableId) {
-//         return res.status(404).json({ message: 'General position table not found' })
 //         await calculatePositionTables(currentSeason)
 //       }
 
@@ -911,10 +812,6 @@ const getMatchesByTeamId = async (req, res) => {
 //       const teamsInRange = generalPositionTable.positions
 //         .filter(position => position.puesto >= start && position.puesto <= end)
 //         .map(position => position.team._id.toString())
-
-//       if (teamsInRange.length === 0) {
-//         return res.status(404).json({ message: 'No teams found in the specified range' })
-//       }
 
 //       query.$and.push({
 //         $or: [
@@ -1051,11 +948,16 @@ const getMatchesByTeamId = async (req, res) => {
 //     res.status(500).send('An error occurred while fetching team stats')
 //   }
 // }
+// Controlador para obtener estadísticas de un equipo (EN PRUEBA)
 
 const getTeamStats = async (req, res) => {
   try {
     const idTeam = req.params.idTeam
-    console.log('idTeam', idTeam)
+    if (!idTeam) {
+      console.log('IDTEAM', idTeam)
+      return res.status(200).json({ })
+    }
+
     const {
       statistic,
       matchesCount = 5,
@@ -1067,11 +969,11 @@ const getTeamStats = async (req, res) => {
       currentSeason,
       position
     } = req.query
+
     const booleanHomeOnly = homeOnly === 'true'
     const booleanAwayOnly = awayOnly === 'true'
     const booleanLessThan = lessThan === 'true'
     const booleanPosition = position !== 'false'
-    console.log('booleanPosition', booleanPosition)
     const query = {
       $and: [{ isFinished: true }]
     }
@@ -1093,7 +995,7 @@ const getTeamStats = async (req, res) => {
         few: 0,
         many: 0,
         total: 0,
-        values: [] // Incluir un array vacío para los valores
+        values: []
       }
 
       const allStats = {
@@ -1111,56 +1013,47 @@ const getTeamStats = async (req, res) => {
     }
 
     if (booleanPosition) {
+      if (currentSeason) {
+        query.$and.push({ seasonYear: currentSeason })
+      }
       const [start, end] = position.split('-').map(Number)
 
-      const season = await Season.findById(currentSeason)
+      const zoneId = await getZoneIdByTeam(idTeam, currentSeason)
 
-      if (!season) {
-        return res.status(404).json({ message: 'Current season not found' })
+      if (zoneId) {
+        await updateZonePositionTablesFromGeneral(currentSeason) // Actualizar tablas de posición de zonas
+        const zonePositionTable = await PositionTable.findOne({ zone: zoneId }).populate('positions.team')
+        if (!zonePositionTable || !zonePositionTable.positions) {
+          return res.status(404).json({ message: 'Zone Positions not found' })
+        }
+        const teamsInRange = zonePositionTable.positions
+          .filter(position => position.puesto >= start && position.puesto <= end)
+          .map(position => position.team._id.toString())
+
+        query.$and.push({
+          $or: [
+            { homeTeam: idTeam, awayTeam: { $in: teamsInRange } },
+            { awayTeam: idTeam, homeTeam: { $in: teamsInRange } }
+          ]
+        })
+      } else {
+        await updateSeasonPositionTable(currentSeason) // Actualizar tabla de posición general
+        const generalPositionTable = await PositionTable.findOne({ season: currentSeason, type: 'general' }).populate('positions.team')
+        if (!generalPositionTable || !generalPositionTable.positions) {
+          return res.status(404).json({ message: 'General Positions not found' })
+        }
+        const teamsInRange = generalPositionTable.positions
+          .filter(position => position.puesto >= start && position.puesto <= end)
+          .map(position => position.team._id.toString())
+
+        query.$and.push({
+          $or: [
+            { homeTeam: idTeam, awayTeam: { $in: teamsInRange } },
+            { awayTeam: idTeam, homeTeam: { $in: teamsInRange } }
+          ]
+        })
       }
-
-      const generalPositionTableId = season.positionTables.general
-
-      if (!generalPositionTableId) {
-        await calculatePositionTables(currentSeason)
-      }
-
-      const generalPositionTable = await PositionTable.findById(generalPositionTableId).populate('positions.team')
-
-      if (!generalPositionTable || !generalPositionTable.positions) {
-        return res.status(404).json({ message: 'Positions not found' })
-      }
-
-      const teamsInRange = generalPositionTable.positions
-        .filter(position => position.puesto >= start && position.puesto <= end)
-        .map(position => position.team._id.toString())
-
-      // if (teamsInRange.length === 0) {
-      //   // return res.status(404).json({ message: 'No teams found in the specified range' })
-      //   const allStats = {
-      //     teamId: null,
-      //     teamName: null,
-      //     matches: [],
-      //     matchesCount,
-      //     homeOnly,
-      //     awayOnly,
-      //     [statistic]: null,
-      //     lessThan,
-      //     receivedStats: null, // Agregar las estadísticas recibidas
-      //     matchesWithStatistic: {},
-      //     matchesWithRange: {}
-      //   }
-      //   return res.status(200).json(allStats)
-      // }
-
-      query.$and.push({
-        $or: [
-          { homeTeam: idTeam, awayTeam: { $in: teamsInRange } },
-          { awayTeam: idTeam, homeTeam: { $in: teamsInRange } }
-        ]
-      })
     }
-
     const matches = await Match.find(query)
       .sort({ date: -1 })
       .limit(parseInt(matchesCount))
@@ -1170,7 +1063,6 @@ const getTeamStats = async (req, res) => {
       })
       .populate('homeTeam awayTeam')
       .populate('seasonYear', 'year')
-
     const team = await Team.findById(idTeam)
 
     const generateStats = (matches, statistic, lowerLimit, upperLimit, isReceived = false) => {
@@ -1179,7 +1071,7 @@ const getTeamStats = async (req, res) => {
         few: 0,
         many: 0,
         total: 0,
-        values: [] // Array para almacenar los valores utilizados
+        values: []
       }
 
       const ranges = []
@@ -1199,7 +1091,7 @@ const getTeamStats = async (req, res) => {
 
         const statValue = teamStats[statistic]
         stats.total += statValue
-        stats.values.push(statValue) // Agregar el valor al array
+        stats.values.push(statValue)
 
         ranges.forEach((range) => {
           const key = `matchesWith${range.toString().replace('.', '_')}`
@@ -1252,7 +1144,7 @@ const getTeamStats = async (req, res) => {
       awayOnly,
       [statistic]: { ...stats, receivedStats },
       lessThan,
-      receivedStats, // Agregar las estadísticas recibidas
+      receivedStats,
       matchesWithStatistic: matches.filter((match) => {
         const teamStats = match.homeTeam.equals(idTeam)
           ? match.teamStatistics.local
@@ -1284,8 +1176,27 @@ const getTeamStats = async (req, res) => {
     }
     res.status(200).json(allStats)
   } catch (error) {
-    console.error('Error fetching team stats:', error)
-    res.status(500).send('An error occurred while fetching team stats')
+    console.error('Error fetching matches by team ID:', error)
+    res.status(500).send('An error occurred while fetching matches by team ID')
+  }
+}
+
+const getZoneIdByTeam = async (idTeam, seasonId) => {
+  try {
+    const season = await Season.findById(seasonId).populate('zones')
+    if (!season) {
+      throw new Error(`Season with ID ${seasonId} not found`)
+    }
+
+    for (const zone of season.zones) {
+      if (zone.teams.includes(idTeam)) {
+        return zone._id
+      }
+    }
+    return null
+  } catch (error) {
+    console.error('Error getting zone ID by team:', error)
+    throw error
   }
 }
 

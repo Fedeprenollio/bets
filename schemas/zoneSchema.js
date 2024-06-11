@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const seasonSchema = new mongoose.Schema({
+const zoneSchema = new mongoose.Schema({
   league: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'League',
@@ -20,9 +20,6 @@ const seasonSchema = new mongoose.Schema({
   }],
   numberOfRounds: {
     type: Number
-  },
-  isCurrentSeason: {
-    type: Boolean
   },
   fechas: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -46,11 +43,10 @@ const seasonSchema = new mongoose.Schema({
       ref: 'PositionTable'
     }
   },
-  zones: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Zone'
-  }]
+  zoneName: { // Añade un campo para el nombre de la zona
+    type: String,
+    required: true
+  }
+})
 
-}, { versionKey: false })
-
-export const Season = mongoose.model('Season', seasonSchema)
+export const Zone = mongoose.model('Zone', zoneSchema)

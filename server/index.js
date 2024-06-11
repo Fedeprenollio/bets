@@ -12,6 +12,7 @@ import cookieParser from 'cookie-parser'
 import verifyTokenRouter from './routes/validatedToken.js'
 import { standingsRouter } from './routes/standings.js'
 import { fechaRouter } from './routes/fecha.js'
+import tableRouter from './routes/table.js'
 const URI_DB = process.env.URI_DB
 
 const PORT = process.env.PORT || 1234
@@ -42,6 +43,7 @@ app.use('/season', seasonRouter)
 app.use('/user', userRouter)
 app.use('/standings', standingsRouter)
 app.use('/fecha', fechaRouter)
+app.use('/tablePosition', tableRouter)
 
 app.use('/verify-token', verifyTokenRouter)
 
@@ -56,8 +58,6 @@ app.use((req, res, next) => {
 
 async function main () {
   await mongoose.connect(URI_DB, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     serverSelectionTimeoutMS: 30000, // 30 segundos
     socketTimeoutMS: 45000 // 45 segundos
   })

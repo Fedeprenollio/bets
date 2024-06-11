@@ -1,5 +1,6 @@
 import express from 'express'
 import { controllers } from '../controllers/season.controller.js'
+import { addTeamToZone, addTeamsToZoneAndCreateZone, addZoneToSeason, deleteTeamFromZone, deleteZoneFromSeason, getTeamFromZone, getTeamsFromZone, getZoneFromSeason, getZonesFromSeason, updateTeamInZone, updateZoneInSeason } from '../controllers/zone.controller.js'
 
 // Crear un nuevo Router
 export const seasonRouter = express.Router()
@@ -237,3 +238,18 @@ seasonRouter.get('/:id/matches', controllers.getSeasonMatchesByRound)
 // })
 
 seasonRouter.get('/:seasonId/positions', controllers.getTablePosition)
+
+seasonRouter.post('/:seasonId/zones', addZoneToSeason)
+seasonRouter.get('/:seasonId/zones', getZonesFromSeason)
+seasonRouter.get('/:seasonId/zones/:zoneId', getZoneFromSeason)
+seasonRouter.put('/:seasonId/zones/:zoneId', updateZoneInSeason)
+seasonRouter.delete('/:seasonId/zones/:zoneId', deleteZoneFromSeason)
+
+seasonRouter.post('/zone/:zoneId/addTeams', addTeamToZone)
+// CREA ZONA Y AGREGA LOS EQUIPOS:
+seasonRouter.post('/add-teams', addTeamsToZoneAndCreateZone)
+
+seasonRouter.get('/:seasonId/zones/:zoneId/teams', getTeamsFromZone)
+seasonRouter.get('/:seasonId/zones/:zoneId/teams/:teamId', getTeamFromZone)
+seasonRouter.put('/:seasonId/zones/:zoneId/teams/:teamId', updateTeamInZone)
+seasonRouter.delete('/zone/:zoneId/team/:teamId', deleteTeamFromZone)

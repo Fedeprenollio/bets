@@ -1,0 +1,43 @@
+### obtener zonas de una season
+GET http://localhost:1234/season/66612e8f41ee47d4c53e37e6/zones
+
+
+### obtener una season
+GET http://localhost:1234/season/664cbaabfa500cb52f1e1df0
+
+
+
+
+### obtener estadisticas de una season
+GET http://localhost:1234/standings/season/664cbaabfa500cb52f1e1df0
+
+
+
+###CREAR O ACTUALZIAR TABLAS
+POST  http://localhost:1234/tablePosition/update-position-tables
+Content-Type: application/json
+
+{
+    "seasonId":"664cbaabfa500cb52f1e1df0"
+}
+
+
+### obtener una tabla por id
+GET http://localhost:1234/tablePosition/6663c533b73d1935997798e9
+
+### obtener todas la tablas de una zone
+GET http://localhost:1234/tablePosition/zone/66622b7e9e65a3dad4978cf2
+
+
+
+
+
+
+### delete una tabla por id
+DELETE  http://localhost:1234/tablePosition/666147704b75ce938d4f6b9a
+
+
+# standingsRouter.get('/season/:seasonId', standingsController.getStandingsBySeason)
+
+###Borrar una zone de una season
+DELETE  http://localhost:1234/season/66612e8f41ee47d4c53e37e6/zones/66612fcf543f0d736c24230f
