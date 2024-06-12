@@ -1355,13 +1355,12 @@ const getTeamStatsForSeason = async (req, res) => {
     const calculateStats = (values) => {
       if (values.length === 0) return { promedio: 0, mediana: 0, desviacion: 0 }
 
-      const promedio = ss.mean(values)
-      const mediana = ss.median(values)
-      const desviacion = parseFloat(ss.standardDeviation(values).toFixed(2))
-      // parseFloat(ss.standardDeviation(values).toFixed(2))
+      const promedio = parseFloat(ss.mean(values).toFixed(1))
+      const mediana = parseFloat(ss.median(values).toFixed(1))
+      const desviacion = parseFloat(ss.standardDeviation(values).toFixed(1))
+
       return { promedio, mediana, desviacion }
     }
-
     // Añadir estadísticas calculadas a cada equipo
     Object.values(teamStats).forEach((team) => {
       Object.keys(team.statistics).forEach((statKey) => {
