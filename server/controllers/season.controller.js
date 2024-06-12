@@ -314,6 +314,97 @@ const getSeasonsByLeagueId = async (req, res) => {
 //   }
 // }
 
+// const addMatchesToSeason = async (req, res) => {
+//   try {
+//     // Obtener el ID de la temporada desde los parámetros de la ruta
+//     const seasonId = req.params.seasonId
+
+//     // Obtener la lista de partidos desde el cuerpo de la solicitud
+//     const matches = req.body.matches
+//     console.log('DATA DEL MATCH', matches)
+
+//     // Buscar la temporada por su ID
+//     const season = await Season.findById(seasonId).populate('zones')
+//     if (!season) {
+//       return res.status(404).json({ message: 'Season not found' })
+//     }
+
+//     // Obtener los IDs de los equipos de la temporada
+//     const teamsSeason = season.teams.map((team) => team.toString())
+
+//     // Verificar si los equipos de los partidos recibidos están en la temporada
+//     const teamsInMatches = matches.every((match) => {
+//       return (
+//         teamsSeason.includes(match.homeTeam.toString()) &&
+//         teamsSeason.includes(match.awayTeam.toString())
+//       )
+//     })
+//     if (!teamsInMatches) {
+//       return res
+//         .status(400)
+//         .json({ message: 'Some teams in matches are not in the season' })
+//     }
+
+//     // Iterar sobre los partidos y asociarlos a las "Fechas" (rondas)
+//     // for (const matchData of matches) {
+//     //   // Crear el partido
+//     //   const match = await Match.create(matchData)
+
+//     //   // Obtener o crear la "Fecha" correspondiente (por número de ronda)
+//     //   let fecha = await Fecha.findOne({
+//     //     number: matchData.round,
+//     //     season: seasonId,
+//     //     order: matchData.order
+//     //   })
+//     //   if (!fecha) {
+//     //     fecha = await Fecha.create({
+//     //       number: matchData.round,
+//     //       season: seasonId,
+//     //       order: matchData.order
+//     //     })
+//     //     // Agregar la fecha a la temporada
+//     //     season.fechas.push(fecha._id)
+//     //   } else {
+//     //     // Verificar si la fecha ya está en la lista de fechas de la temporada
+//     //     const isFechaInSeason = season.fechas.some((f) => f.equals(fecha._id))
+//     //     if (!isFechaInSeason) {
+//     //       // Agregar la fecha a la temporada
+//     //       season.fechas.push(fecha._id)
+//     //     }
+//     //   }
+
+//     //   // Asociar el partido a la "Fecha"
+//     //   fecha.matches.push(match._id)
+//     //   await fecha.save()
+
+//     //   // Agregar el partido a la lista de partidos de la temporada
+//     //   season.matches.push(match._id)
+
+//     //   // Asociar el partido a la zona correspondiente si la temporada tiene zonas
+//     //   if (season.zones && season.zones.length > 0) {
+//     //     // Encuentra las zonas a las que pertenecen los equipos
+//     //     for (const zone of season.zones) {
+//     //       if (
+//     //         zone.teams.includes(matchData.homeTeam) ||
+//     //         zone.teams.includes(matchData.awayTeam)
+//     //       ) {
+//     //         zone.matches.push(match._id)
+//     //         await zone.save()
+//     //       }
+//     //     }
+//     //   }
+//     // }
+
+//     // Guardar los cambios en la temporada
+//     await season.save()
+
+//     // Devolver los partidos creados
+//     res.status(201).json(matches)
+//   } catch (error) {
+//     console.error(error.message)
+//     res.status(500).json({ message: error.message })
+//   }
+// }
 // PRUEBA:
 const addMatchesToSeason = async (req, res) => {
   try {
@@ -341,12 +432,11 @@ const addMatchesToSeason = async (req, res) => {
       )
     })
     if (!teamsInMatches) {
-      return res
-        .status(400)
-        .json({ message: 'Some teams in matches are not in the season' })
+      return res.status(400).json({ message: 'Some teams in matches are not in the season' })
     }
 
     // Iterar sobre los partidos y asociarlos a las "Fechas" (rondas)
+    const populatedMatches = []
     for (const matchData of matches) {
       // Crear el partido
       const match = await Match.create(matchData)
@@ -394,13 +484,22 @@ const addMatchesToSeason = async (req, res) => {
           }
         }
       }
+
+      // Poblar el partido con los nombres de los equipos, la liga y la temporada
+      const populatedMatch = await Match.findById(match._id)
+        .populate('homeTeam')
+        .populate('awayTeam')
+        .populate('league')
+        .populate('seasonYear')
+
+      populatedMatches.push(populatedMatch)
     }
 
     // Guardar los cambios en la temporada
     await season.save()
 
-    // Devolver los partidos creados
-    res.status(201).json(matches)
+    // Devolver los partidos creados y populados
+    res.status(201).json({ populatedMatches, state: 'ok' })
   } catch (error) {
     console.error(error.message)
     res.status(500).json({ message: error.message })
