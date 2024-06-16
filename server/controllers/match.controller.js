@@ -1394,7 +1394,7 @@ const getTeamStats = async (req, res) => {
 const getAllTeamsStats = async (req, res) => {
   const {
     season,
-    statistics, // Se espera una cadena con múltiples estadísticas separadas por comas
+    statistics, // Expected to be a string with multiple statistics separated by commas
     matchesCount = 5,
     homeOnly = 'true',
     awayOnly = 'true',
@@ -1417,7 +1417,6 @@ const getAllTeamsStats = async (req, res) => {
     }
 
     let teamIds = []
-    console.log('Season', season)
     if (season) {
       const seasonData = await Season.findOne({ year: season }).populate('teams')
       if (seasonData) {
@@ -1571,7 +1570,8 @@ const getAllTeamsStats = async (req, res) => {
       } else if (!booleanHomeOnly && booleanAwayOnly) {
         teamMatches = teamMatches.filter(match => match.awayTeam._id.toString() === teamId)
       }
-      // Limitar la cantidad de partidos a matchesCount
+      // If both are false, don't apply any filter
+      // Limit the number of matches to matchesCount
       teamMatches = teamMatches.slice(0, matchesCount)
 
       const stats = generateStats(teamMatches, statistics.split(','), parseFloat(lowerLimit), parseFloat(upperLimit), teamId)
