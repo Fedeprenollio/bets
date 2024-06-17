@@ -1395,7 +1395,7 @@ const getAllTeamsStats = async (req, res) => {
   const {
     season,
     statistics, // Expected to be a string with multiple statistics separated by commas
-    matchesCount = 5,
+    matchesCount,
     homeOnly = 'true',
     awayOnly = 'true',
     lowerLimit,
@@ -1438,9 +1438,27 @@ const getAllTeamsStats = async (req, res) => {
 
     const determineRanges = ([start, end], step) => {
       const ranges = {}
+      const precision = step === 1 ? 1 : 2
+
       for (let i = start; i <= end; i += step) {
-        ranges[`${i.toFixed(1).replace('.', '_')}`] = 0
+        const rangeKey = i.toFixed(precision).replace('.', '_')
+        ranges[rangeKey] = 0 // Inicializar contador en 0 para el rango
       }
+
+      // Generar underRanges
+      Object.keys(ranges).forEach(rangeKey => {
+        const rangeValue = parseFloat(rangeKey.replace('_', '.'))
+
+        ranges[rangeKey.replace('over', 'under')] = Object.keys(ranges).reduce((count, key) => {
+          const keyValue = parseFloat(key.replace('_', '.'))
+
+          if (keyValue < rangeValue) {
+            return count + 1
+          }
+          return count
+        }, 0)
+      })
+
       return ranges
     }
 
@@ -1458,13 +1476,14 @@ const getAllTeamsStats = async (req, res) => {
 
         switch (statistic) {
           case 'goals':
+            stats[statistic].received.overRanges = determineRanges([0.5, 11.5], 1)
+            stats[statistic].received.underRanges = determineRanges([0.5, 11.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([0.5, 11.5], 1)
+            stats[statistic].scored.underRanges = determineRanges([0.5, 11.5], 1)
             stats[statistic].total.overRanges = determineRanges([0.5, 11.5], 1)
             stats[statistic].total.underRanges = determineRanges([0.5, 11.5], 1)
-            stats[statistic].received.overRanges = determineRanges([0.5, 6.5], 1)
-            stats[statistic].received.underRanges = determineRanges([0.5, 6.5], 1)
-            stats[statistic].scored.overRanges = determineRanges([0.5, 6.5], 1)
-            stats[statistic].scored.underRanges = determineRanges([0.5, 6.5], 1)
             break
+
           case 'corners':
             stats[statistic].total.overRanges = determineRanges([10.5, 20.5], 2)
             stats[statistic].total.underRanges = determineRanges([10.5, 20.5], 2)
@@ -1473,6 +1492,7 @@ const getAllTeamsStats = async (req, res) => {
             stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
             stats[statistic].scored.underRanges = determineRanges([6.5, 11.5], 1)
             break
+
           case 'offsides':
             stats[statistic].total.overRanges = determineRanges([8.5, 16.5], 1)
             stats[statistic].total.underRanges = determineRanges([8.5, 16.5], 1)
@@ -1481,6 +1501,7 @@ const getAllTeamsStats = async (req, res) => {
             stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
             stats[statistic].scored.underRanges = determineRanges([6.5, 11.5], 1)
             break
+
           case 'yellowCards':
             stats[statistic].total.overRanges = determineRanges([3.5, 8.5], 1)
             stats[statistic].total.underRanges = determineRanges([3.5, 8.5], 1)
@@ -1489,6 +1510,7 @@ const getAllTeamsStats = async (req, res) => {
             stats[statistic].scored.overRanges = determineRanges([1.5, 5.5], 1)
             stats[statistic].scored.underRanges = determineRanges([1.5, 5.5], 1)
             break
+
           case 'shots':
             stats[statistic].total.overRanges = determineRanges([18.5, 30.5], 2)
             stats[statistic].total.underRanges = determineRanges([18.5, 30.5], 2)
@@ -1497,19 +1519,22 @@ const getAllTeamsStats = async (req, res) => {
             stats[statistic].scored.overRanges = determineRanges([18.5, 30.5], 2)
             stats[statistic].scored.underRanges = determineRanges([18.5, 30.5], 2)
             break
+
           case 'shotsOnTarget':
-            stats[statistic].total.overRanges = determineRanges([5.5, 11.5], 2)
-            stats[statistic].total.underRanges = determineRanges([5.5, 11.5], 2)
+            stats[statistic].total.overRanges = determineRanges([5.5, 16.5], 2)
+            stats[statistic].total.underRanges = determineRanges([5.5, 16.5], 2)
             stats[statistic].received.overRanges = determineRanges([5.5, 11.5], 2)
             stats[statistic].received.underRanges = determineRanges([5.5, 11.5], 2)
             stats[statistic].scored.overRanges = determineRanges([5.5, 11.5], 2)
             stats[statistic].scored.underRanges = determineRanges([5.5, 11.5], 2)
             break
+
           default:
             break
         }
       })
-
+      console.log('version 1', determineRanges([5.5, 11.5], 2))
+      console.log('BERSION 2', determineRanges([6.5, 11.5], 1))
       matches.forEach((match) => {
         const isHomeTeam = match.homeTeam._id.toString() === teamId
         const teamStats = isHomeTeam ? match.teamStatistics.local : match.teamStatistics.visitor
@@ -1530,7 +1555,6 @@ const getAllTeamsStats = async (req, res) => {
 
           Object.keys(stats[statistic].total.overRanges).forEach(rangeKey => {
             const range = parseFloat(rangeKey.replace('_', '.'))
-
             if (statValue >= range) {
               stats[statistic].scored.overRanges[rangeKey]++
             } else {
@@ -1551,7 +1575,6 @@ const getAllTeamsStats = async (req, res) => {
           })
         })
       })
-
       return stats
     }
 
@@ -1572,7 +1595,9 @@ const getAllTeamsStats = async (req, res) => {
       }
       // If both are false, don't apply any filter
       // Limit the number of matches to matchesCount
-      teamMatches = teamMatches.slice(0, matchesCount)
+      if (matchesCount) {
+        teamMatches = teamMatches.slice(0, matchesCount)
+      }
 
       const stats = generateStats(teamMatches, statistics.split(','), parseFloat(lowerLimit), parseFloat(upperLimit), teamId)
 
