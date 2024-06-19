@@ -9,7 +9,10 @@ import { calculatePositionTables } from '../services/tablePositions.js'
 import { Zone } from '../../schemas/zoneSchema.js'
 import { getMatchesAndStats } from '../services/getMatchesAndStats .js'
 import { calculatePositionTablesZone } from '../services/getTablePositionsZone.js'
-import { updateSeasonPositionTable, updateZonePositionTablesFromGeneral } from '../services/updatePositionTables.js'
+import {
+  updateSeasonPositionTable,
+  updateZonePositionTablesFromGeneral
+} from '../services/updatePositionTables.js'
 // Controlador para obtener todos los partidos con filtros opcionales
 const getAllMatches = async (req, res) => {
   try {
@@ -296,9 +299,7 @@ const getMatchById = async (req, res, next) => {
     if (!id) {
       return res.status(404).send({ message: 'Id de partido no ingresado' })
     }
-    const match = await Match.findById(id).populate(
-      'awayTeam homeTeam league'
-    )
+    const match = await Match.findById(id).populate('awayTeam homeTeam league')
     if (!match) {
       return res.status(404).send({ message: 'Partido no encotrado' })
     }
@@ -954,7 +955,7 @@ const getTeamStats = async (req, res) => {
   try {
     const idTeam = req.params.idTeam
     if (!idTeam) {
-      return res.status(200).json({ })
+      return res.status(200).json({})
     }
 
     const {
@@ -983,10 +984,7 @@ const getTeamStats = async (req, res) => {
       query.$and.push({ awayTeam: idTeam })
     } else if (booleanHomeOnly && booleanAwayOnly) {
       query.$and.push({
-        $or: [
-          { homeTeam: idTeam },
-          { awayTeam: idTeam }
-        ]
+        $or: [{ homeTeam: idTeam }, { awayTeam: idTeam }]
       })
     } else {
       const emptyStats = {
@@ -1021,13 +1019,17 @@ const getTeamStats = async (req, res) => {
 
       if (zoneId) {
         await updateZonePositionTablesFromGeneral(currentSeason) // Actualizar tablas de posición de zonas
-        const zonePositionTable = await PositionTable.findOne({ zone: zoneId }).populate('positions.team')
+        const zonePositionTable = await PositionTable.findOne({
+          zone: zoneId
+        }).populate('positions.team')
         if (!zonePositionTable || !zonePositionTable.positions) {
           return res.status(404).json({ message: 'Zone Positions not found' })
         }
         const teamsInRange = zonePositionTable.positions
-          .filter(position => position.puesto >= start && position.puesto <= end)
-          .map(position => position.team._id.toString())
+          .filter(
+            (position) => position.puesto >= start && position.puesto <= end
+          )
+          .map((position) => position.team._id.toString())
 
         query.$and.push({
           $or: [
@@ -1037,13 +1039,20 @@ const getTeamStats = async (req, res) => {
         })
       } else {
         await updateSeasonPositionTable(currentSeason) // Actualizar tabla de posición general
-        const generalPositionTable = await PositionTable.findOne({ season: currentSeason, type: 'general' }).populate('positions.team')
+        const generalPositionTable = await PositionTable.findOne({
+          season: currentSeason,
+          type: 'general'
+        }).populate('positions.team')
         if (!generalPositionTable || !generalPositionTable.positions) {
-          return res.status(404).json({ message: 'General Positions not found' })
+          return res
+            .status(404)
+            .json({ message: 'General Positions not found' })
         }
         const teamsInRange = generalPositionTable.positions
-          .filter(position => position.puesto >= start && position.puesto <= end)
-          .map(position => position.team._id.toString())
+          .filter(
+            (position) => position.puesto >= start && position.puesto <= end
+          )
+          .map((position) => position.team._id.toString())
 
         query.$and.push({
           $or: [
@@ -1064,7 +1073,13 @@ const getTeamStats = async (req, res) => {
       .populate('seasonYear', 'year')
     const team = await Team.findById(idTeam)
 
-    const generateStats = (matches, statistic, lowerLimit, upperLimit, isReceived = false) => {
+    const generateStats = (
+      matches,
+      statistic,
+      lowerLimit,
+      upperLimit,
+      isReceived = false
+    ) => {
       const stats = {
         matchesTotalFinished: matches?.length || 0,
         few: 0,
@@ -1085,8 +1100,12 @@ const getTeamStats = async (req, res) => {
 
       matches.forEach((match) => {
         const teamStats = match.homeTeam.equals(idTeam)
-          ? isReceived ? match.teamStatistics.visitor : match.teamStatistics.local
-          : isReceived ? match.teamStatistics.local : match.teamStatistics.visitor
+          ? isReceived
+            ? match.teamStatistics.visitor
+            : match.teamStatistics.local
+          : isReceived
+            ? match.teamStatistics.local
+            : match.teamStatistics.visitor
 
         const statValue = teamStats[statistic]
         stats.total += statValue
@@ -1390,7 +1409,8 @@ const getTeamStats = async (req, res) => {
 //   }
 // }
 
-// Prueba:
+// ANDA BIEN:
+
 const getAllTeamsStats = async (req, res) => {
   const {
     season,
@@ -1705,10 +1725,13 @@ const getAllTeamsStats = async (req, res) => {
         teamMatches = teamMatches.filter(match => match.awayTeam._id.toString() === teamId)
       }
 
-      // Limit the number of matches to matchesCount
-      if (matchesCount) {
+      // Limitar la cantidad de partidos a analizar
+      if (matchesCount && matchesCount > 0) {
         teamMatches = teamMatches.slice(0, matchesCount)
       }
+      console.log('teamMatches', teamMatches)
+      console.log('AAA')
+      console.log('matchesCount', matchesCount)
 
       const stats = generateStats(teamMatches, statistics.split(','), teamId)
 
@@ -1757,7 +1780,10 @@ const getTeamStatsForSeason = async (req, res) => {
   const { seasonId } = req.params
   try {
     // Buscar todos los partidos de la temporada especificada que estén finalizados
-    const matches = await Match.find({ seasonYear: seasonId, isFinished: true }).populate('homeTeam awayTeam')
+    const matches = await Match.find({
+      seasonYear: seasonId,
+      isFinished: true
+    }).populate('homeTeam awayTeam')
 
     // Objeto para almacenar las estadísticas de cada equipo
     const teamStats = {}
@@ -1812,17 +1838,25 @@ const getTeamStatsForSeason = async (req, res) => {
       teamStats[homeTeamId].statistics.goals.total += localGoals || 0
       teamStats[homeTeamId].statistics.offsides.values.push(localOffsides || 0)
       teamStats[homeTeamId].statistics.offsides.total += localOffsides || 0
-      teamStats[homeTeamId].statistics.yellowCards.values.push(localYellowCards || 0)
-      teamStats[homeTeamId].statistics.yellowCards.total += localYellowCards || 0
+      teamStats[homeTeamId].statistics.yellowCards.values.push(
+        localYellowCards || 0
+      )
+      teamStats[homeTeamId].statistics.yellowCards.total +=
+        localYellowCards || 0
       teamStats[homeTeamId].statistics.redCards.values.push(localRedCards || 0)
       teamStats[homeTeamId].statistics.redCards.total += localRedCards || 0
       teamStats[homeTeamId].statistics.corners.values.push(localCorners || 0)
       teamStats[homeTeamId].statistics.corners.total += localCorners || 0
       teamStats[homeTeamId].statistics.shots.values.push(localShots || 0)
       teamStats[homeTeamId].statistics.shots.total += localShots || 0
-      teamStats[homeTeamId].statistics.shotsOnTarget.values.push(localShotsOnTarget || 0)
-      teamStats[homeTeamId].statistics.shotsOnTarget.total += localShotsOnTarget || 0
-      teamStats[homeTeamId].statistics.possession.values.push(localPossession || 0)
+      teamStats[homeTeamId].statistics.shotsOnTarget.values.push(
+        localShotsOnTarget || 0
+      )
+      teamStats[homeTeamId].statistics.shotsOnTarget.total +=
+        localShotsOnTarget || 0
+      teamStats[homeTeamId].statistics.possession.values.push(
+        localPossession || 0
+      )
       teamStats[homeTeamId].statistics.possession.total += localPossession || 0
       teamStats[homeTeamId].statistics.fouls.values.push(localFouls || 0)
       teamStats[homeTeamId].statistics.fouls.total += localFouls || 0
@@ -1843,17 +1877,25 @@ const getTeamStatsForSeason = async (req, res) => {
       teamStats[homeTeamId].received.goals.total += visitorGoals || 0
       teamStats[homeTeamId].received.offsides.values.push(visitorOffsides || 0)
       teamStats[homeTeamId].received.offsides.total += visitorOffsides || 0
-      teamStats[homeTeamId].received.yellowCards.values.push(visitorYellowCards || 0)
-      teamStats[homeTeamId].received.yellowCards.total += visitorYellowCards || 0
+      teamStats[homeTeamId].received.yellowCards.values.push(
+        visitorYellowCards || 0
+      )
+      teamStats[homeTeamId].received.yellowCards.total +=
+        visitorYellowCards || 0
       teamStats[homeTeamId].received.redCards.values.push(visitorRedCards || 0)
       teamStats[homeTeamId].received.redCards.total += visitorRedCards || 0
       teamStats[homeTeamId].received.corners.values.push(visitorCorners || 0)
       teamStats[homeTeamId].received.corners.total += visitorCorners || 0
       teamStats[homeTeamId].received.shots.values.push(visitorShots || 0)
       teamStats[homeTeamId].received.shots.total += visitorShots || 0
-      teamStats[homeTeamId].received.shotsOnTarget.values.push(visitorShotsOnTarget || 0)
-      teamStats[homeTeamId].received.shotsOnTarget.total += visitorShotsOnTarget || 0
-      teamStats[homeTeamId].received.possession.values.push(visitorPossession || 0)
+      teamStats[homeTeamId].received.shotsOnTarget.values.push(
+        visitorShotsOnTarget || 0
+      )
+      teamStats[homeTeamId].received.shotsOnTarget.total +=
+        visitorShotsOnTarget || 0
+      teamStats[homeTeamId].received.possession.values.push(
+        visitorPossession || 0
+      )
       teamStats[homeTeamId].received.possession.total += visitorPossession || 0
       teamStats[homeTeamId].received.fouls.values.push(visitorFouls || 0)
       teamStats[homeTeamId].received.fouls.total += visitorFouls || 0
@@ -1866,20 +1908,33 @@ const getTeamStatsForSeason = async (req, res) => {
       }
       teamStats[awayTeamId].statistics.goals.values.push(visitorGoals || 0)
       teamStats[awayTeamId].statistics.goals.total += visitorGoals || 0
-      teamStats[awayTeamId].statistics.offsides.values.push(visitorOffsides || 0)
+      teamStats[awayTeamId].statistics.offsides.values.push(
+        visitorOffsides || 0
+      )
       teamStats[awayTeamId].statistics.offsides.total += visitorOffsides || 0
-      teamStats[awayTeamId].statistics.yellowCards.values.push(visitorYellowCards || 0)
-      teamStats[awayTeamId].statistics.yellowCards.total += visitorYellowCards || 0
-      teamStats[awayTeamId].statistics.redCards.values.push(visitorRedCards || 0)
+      teamStats[awayTeamId].statistics.yellowCards.values.push(
+        visitorYellowCards || 0
+      )
+      teamStats[awayTeamId].statistics.yellowCards.total +=
+        visitorYellowCards || 0
+      teamStats[awayTeamId].statistics.redCards.values.push(
+        visitorRedCards || 0
+      )
       teamStats[awayTeamId].statistics.redCards.total += visitorRedCards || 0
       teamStats[awayTeamId].statistics.corners.values.push(visitorCorners || 0)
       teamStats[awayTeamId].statistics.corners.total += visitorCorners || 0
       teamStats[awayTeamId].statistics.shots.values.push(visitorShots || 0)
       teamStats[awayTeamId].statistics.shots.total += visitorShots || 0
-      teamStats[awayTeamId].statistics.shotsOnTarget.values.push(visitorShotsOnTarget || 0)
-      teamStats[awayTeamId].statistics.shotsOnTarget.total += visitorShotsOnTarget || 0
-      teamStats[awayTeamId].statistics.possession.values.push(visitorPossession || 0)
-      teamStats[awayTeamId].statistics.possession.total += visitorPossession || 0
+      teamStats[awayTeamId].statistics.shotsOnTarget.values.push(
+        visitorShotsOnTarget || 0
+      )
+      teamStats[awayTeamId].statistics.shotsOnTarget.total +=
+        visitorShotsOnTarget || 0
+      teamStats[awayTeamId].statistics.possession.values.push(
+        visitorPossession || 0
+      )
+      teamStats[awayTeamId].statistics.possession.total +=
+        visitorPossession || 0
       teamStats[awayTeamId].statistics.fouls.values.push(visitorFouls || 0)
       teamStats[awayTeamId].statistics.fouls.total += visitorFouls || 0
 
@@ -1888,7 +1943,9 @@ const getTeamStatsForSeason = async (req, res) => {
       teamStats[awayTeamId].received.goals.total += localGoals || 0
       teamStats[awayTeamId].received.offsides.values.push(localOffsides || 0)
       teamStats[awayTeamId].received.offsides.total += localOffsides || 0
-      teamStats[awayTeamId].received.yellowCards.values.push(localYellowCards || 0)
+      teamStats[awayTeamId].received.yellowCards.values.push(
+        localYellowCards || 0
+      )
       teamStats[awayTeamId].received.yellowCards.total += localYellowCards || 0
       teamStats[awayTeamId].received.redCards.values.push(localRedCards || 0)
       teamStats[awayTeamId].received.redCards.total += localRedCards || 0
@@ -1896,9 +1953,14 @@ const getTeamStatsForSeason = async (req, res) => {
       teamStats[awayTeamId].received.corners.total += localCorners || 0
       teamStats[awayTeamId].received.shots.values.push(localShots || 0)
       teamStats[awayTeamId].received.shots.total += localShots || 0
-      teamStats[awayTeamId].received.shotsOnTarget.values.push(localShotsOnTarget || 0)
-      teamStats[awayTeamId].received.shotsOnTarget.total += localShotsOnTarget || 0
-      teamStats[awayTeamId].received.possession.values.push(localPossession || 0)
+      teamStats[awayTeamId].received.shotsOnTarget.values.push(
+        localShotsOnTarget || 0
+      )
+      teamStats[awayTeamId].received.shotsOnTarget.total +=
+        localShotsOnTarget || 0
+      teamStats[awayTeamId].received.possession.values.push(
+        localPossession || 0
+      )
       teamStats[awayTeamId].received.possession.total += localPossession || 0
       teamStats[awayTeamId].received.fouls.values.push(localFouls || 0)
       teamStats[awayTeamId].received.fouls.total += localFouls || 0
@@ -1906,7 +1968,7 @@ const getTeamStatsForSeason = async (req, res) => {
 
     // Función para calcular la mediana, el promedio y la desviación estándar usando simple-statistics
     const calculateStats = (values) => {
-      if (values.length === 0) return { promedio: 0, mediana: 0, desviacion: 0 }
+      if (values.length === 0) { return { promedio: 0, mediana: 0, desviacion: 0 } }
 
       const promedio = parseFloat(ss.mean(values).toFixed(1))
       const mediana = parseFloat(ss.median(values).toFixed(1))
@@ -1939,11 +2001,9 @@ const getTeamStatsForSeason = async (req, res) => {
     res.json(teamStatsArray)
   } catch (error) {
     console.error('Error fetching team statistics for season:', error)
-    res
-      .status(500)
-      .json({
-        error: 'An error occurred while fetching team statistics for season'
-      })
+    res.status(500).json({
+      error: 'An error occurred while fetching team statistics for season'
+    })
   }
 }
 
