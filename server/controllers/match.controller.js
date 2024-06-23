@@ -1201,21 +1201,16 @@ const getTeamStats = async (req, res) => {
 
 // const getAllTeamsStats = async (req, res) => {
 //   const {
-//     country,
 //     season,
-//     statistics, // Se espera una cadena con múltiples estadísticas separadas por comas
-//     matchesCount = 5,
+//     statistics, // Expected to be a string with multiple statistics separated by commas
+//     matchesCount,
 //     homeOnly = 'true',
-//     awayOnly = 'true',
-//     lowerLimit,
-//     upperLimit,
-//     lessThan = 'false'
+//     awayOnly = 'true'
 //   } = req.query
 
 //   try {
 //     const booleanHomeOnly = homeOnly === 'true'
 //     const booleanAwayOnly = awayOnly === 'true'
-//     const booleanLessThan = lessThan === 'true'
 
 //     const query = {
 //       isFinished: true
@@ -1226,15 +1221,14 @@ const getTeamStats = async (req, res) => {
 //     }
 
 //     let teamIds = []
-//     console.log('Country', country)
-//     if (country) {
-//       const teams = await Team.find({ country })
-//       teamIds = teams.map(team => team._id.toString())
-//     } else {
-//       const teams = await Team.find({})
-//       teamIds = teams.map(team => team._id.toString())
+//     if (season) {
+//       const seasonData = await Season.findOne({ year: season }).populate(
+//         'teams'
+//       )
+//       if (seasonData) {
+//         teamIds = seasonData.teams.map((team) => team._id.toString())
+//       }
 //     }
-//     console.log('teamIds', teamIds)
 
 //     if (teamIds.length > 0) {
 //       query.$or = [
@@ -1248,117 +1242,195 @@ const getTeamStats = async (req, res) => {
 //       .populate('homeTeam awayTeam')
 //       .populate('seasonYear', 'year')
 
+//     // Función para determinar los rangos con sus propiedades count y percentage
 //     const determineRanges = ([start, end], step) => {
 //       const ranges = {}
+//       const precision = step === 1 ? 1 : 2
+
 //       for (let i = start; i <= end; i += step) {
-//         ranges[`${i.toFixed(1).replace('.', '_')}`] = 0
+//         const rangeKey = i.toFixed(precision).replace('.', '_')
+//         ranges[rangeKey] = { count: 0, percentage: 0 } // Inicializar contador y porcentaje en 0 para el rango
 //       }
 //       return ranges
 //     }
-
-//     const generateStats = (matches, statistics, lowerLimit, upperLimit, teamId) => {
+//     const generateStats = (matches, statistics, teamId) => {
 //       const stats = {
 //         matchesTotalFinished: matches?.length || 0
 //       }
 
-//       statistics.forEach(statistic => {
+//       // Verificar si statistics está vacío o no definido
+//       if (!statistics || statistics.length === 0) {
+//         console.error('No se proporcionaron estadísticas válidas.')
+//         return stats // Devolver stats vacío o inicializado según sea necesario
+//       }
+
+//       statistics.forEach((statistic) => {
+//         // Asegurarse de inicializar stats[statistic] correctamente
 //         stats[statistic] = {
-//           total: { total: 0, values: [], overRanges: {}, underRanges: {} },
-//           received: { total: 0, values: [], overRanges: {}, underRanges: {} },
-//           scored: { total: 0, values: [], overRanges: {}, underRanges: {} }
+//           total: {
+//             total: 0,
+//             values: [],
+//             overRanges: {},
+//             underRanges: {}
+//           },
+//           received: {
+//             total: 0,
+//             values: [],
+//             overRanges: {},
+//             underRanges: {}
+//           },
+//           scored: {
+//             total: 0,
+//             values: [],
+//             overRanges: {},
+//             underRanges: {}
+//           }
 //         }
 
+//         //  Initialize ranges for over and under
 //         switch (statistic) {
-//           case 'goals':
-//             stats[statistic].total.overRanges = determineRanges([0.5, 11.5], 1)
-//             stats[statistic].total.underRanges = determineRanges([0.5, 11.5], 1)
-//             stats[statistic].received.overRanges = determineRanges([0.5, 6.5], 1)
-//             stats[statistic].received.underRanges = determineRanges([0.5, 6.5], 1)
-//             stats[statistic].scored.overRanges = determineRanges([0.5, 6.5], 1)
-//             stats[statistic].scored.underRanges = determineRanges([0.5, 6.5], 1)
+//           case 'possession':
+//             stats[statistic].received.overRanges = determineRanges([40.5, 99.5], 5)
+//             stats[statistic].scored.overRanges = determineRanges([40.5, 99.5], 5)
 //             break
+//           case 'goals':
+//             stats[statistic].received.overRanges = determineRanges([0.5, 6.5], 1)
+//             stats[statistic].scored.overRanges = determineRanges([0.5, 6.5], 1)
+//             stats[statistic].total.overRanges = determineRanges([2.5, 11.5], 1)
+//             break
+
 //           case 'corners':
 //             stats[statistic].total.overRanges = determineRanges([10.5, 20.5], 2)
-//             stats[statistic].total.underRanges = determineRanges([10.5, 20.5], 2)
 //             stats[statistic].received.overRanges = determineRanges([6.5, 11.5], 1)
-//             stats[statistic].received.underRanges = determineRanges([6.5, 11.5], 1)
 //             stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
-//             stats[statistic].scored.underRanges = determineRanges([6.5, 11.5], 1)
 //             break
+
 //           case 'offsides':
 //             stats[statistic].total.overRanges = determineRanges([8.5, 16.5], 1)
-//             stats[statistic].total.underRanges = determineRanges([8.5, 16.5], 1)
 //             stats[statistic].received.overRanges = determineRanges([6.5, 11.5], 1)
-//             stats[statistic].received.underRanges = determineRanges([6.5, 11.5], 1)
 //             stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
-//             stats[statistic].scored.underRanges = determineRanges([6.5, 11.5], 1)
 //             break
+
 //           case 'yellowCards':
 //             stats[statistic].total.overRanges = determineRanges([3.5, 8.5], 1)
-//             stats[statistic].total.underRanges = determineRanges([3.5, 8.5], 1)
 //             stats[statistic].received.overRanges = determineRanges([1.5, 5.5], 1)
-//             stats[statistic].received.underRanges = determineRanges([1.5, 5.5], 1)
 //             stats[statistic].scored.overRanges = determineRanges([1.5, 5.5], 1)
-//             stats[statistic].scored.underRanges = determineRanges([1.5, 5.5], 1)
 //             break
+
 //           case 'shots':
 //             stats[statistic].total.overRanges = determineRanges([18.5, 30.5], 2)
-//             stats[statistic].total.underRanges = determineRanges([18.5, 30.5], 2)
 //             stats[statistic].received.overRanges = determineRanges([18.5, 30.5], 2)
-//             stats[statistic].received.underRanges = determineRanges([18.5, 30.5], 2)
 //             stats[statistic].scored.overRanges = determineRanges([18.5, 30.5], 2)
-//             stats[statistic].scored.underRanges = determineRanges([18.5, 30.5], 2)
 //             break
+
 //           case 'shotsOnTarget':
-//             stats[statistic].total.overRanges = determineRanges([5.5, 11.5], 2)
-//             stats[statistic].total.underRanges = determineRanges([5.5, 11.5], 2)
+//             stats[statistic].total.overRanges = determineRanges([5.5, 16.5], 2)
 //             stats[statistic].received.overRanges = determineRanges([5.5, 11.5], 2)
-//             stats[statistic].received.underRanges = determineRanges([5.5, 11.5], 2)
 //             stats[statistic].scored.overRanges = determineRanges([5.5, 11.5], 2)
-//             stats[statistic].scored.underRanges = determineRanges([5.5, 11.5], 2)
 //             break
+
 //           default:
 //             break
 //         }
+
+//         // Initialize underRanges based on overRanges for each category
+//         ['total', 'received', 'scored'].forEach((type) => {
+//           const overRanges = stats[statistic][type].overRanges
+//           Object.keys(overRanges).forEach((rangeKey) => {
+//             stats[statistic][type].underRanges[rangeKey] = {
+//               count: 0,
+//               percentage: 0
+//             }
+//           })
+//         })
 //       })
 
+//       // Procesar matches y calcular estadísticas
 //       matches.forEach((match) => {
 //         const isHomeTeam = match.homeTeam._id.toString() === teamId
-//         const teamStats = isHomeTeam ? match.teamStatistics.local : match.teamStatistics.visitor
-//         const opponentStats = isHomeTeam ? match.teamStatistics.visitor : match.teamStatistics.local
+//         const teamStats = isHomeTeam
+//           ? match.teamStatistics.local
+//           : match.teamStatistics.visitor
+//         const opponentStats = isHomeTeam
+//           ? match.teamStatistics.visitor
+//           : match.teamStatistics.local
 
-//         statistics.forEach(statistic => {
+//         statistics.forEach((statistic) => {
 //           const statValue = teamStats[statistic]
 //           const receivedValue = opponentStats[statistic]
 
-//           stats[statistic].scored.total += statValue
-//           stats[statistic].scored.values.push(statValue)
+//           // Verificar si stats[statistic] está definido antes de acceder a sus propiedades
+//           if (stats[statistic]) {
+//             stats[statistic].scored.total += statValue
+//             stats[statistic].scored.values.push(statValue)
+//             stats[statistic].received.total += receivedValue
+//             stats[statistic].received.values.push(receivedValue)
+//             stats[statistic].total.total += statValue + receivedValue
+//             stats[statistic].total.values.push(receivedValue)
 
-//           stats[statistic].received.total += receivedValue
-//           stats[statistic].received.values.push(receivedValue)
+//             Object.keys(stats[statistic].total.overRanges).forEach(
+//               (rangeKey) => {
+//                 const range = parseFloat(rangeKey.replace('_', '.'))
 
-//           stats[statistic].total.total += statValue + receivedValue
-//           stats[statistic].total.values.push(statValue + receivedValue)
+//                 // Update overRanges and underRanges for total
+//                 if (stats[statistic].total.overRanges[rangeKey]) {
+//                   if (statValue + receivedValue >= range) {
+//                     stats[statistic].total.overRanges[rangeKey].count++
+//                   } else {
+//                     stats[statistic].total.underRanges[rangeKey].count++
+//                   }
+//                 }
+//               }
+//             )
+//             Object.keys(stats[statistic].scored.overRanges).forEach(
+//               (rangeKey) => {
+//                 const range = parseFloat(rangeKey.replace('_', '.'))
+//                 // Update overRanges and underRanges for scored
+//                 if (stats[statistic].scored.overRanges[rangeKey]) {
+//                   if (statValue >= range) {
+//                     stats[statistic].scored.overRanges[rangeKey].count++
+//                   } else {
+//                     stats[statistic].scored.underRanges[rangeKey].count++
+//                   }
+//                 }
+//               }
+//             )
+//             Object.keys(stats[statistic].received.overRanges).forEach(
+//               (rangeKey) => {
+//                 const range = parseFloat(rangeKey.replace('_', '.'))
 
-//           Object.keys(stats[statistic].total.overRanges).forEach(rangeKey => {
-//             const range = parseFloat(rangeKey.replace('_', '.'))
+//                 // Update overRanges and underRanges for received
+//                 if (stats[statistic].received.overRanges[rangeKey]) {
+//                   if (receivedValue >= range) {
+//                     stats[statistic].received.overRanges[rangeKey].count++
+//                   } else {
+//                     stats[statistic].received.underRanges[rangeKey].count++
+//                   }
+//                 }
+//               }
+//             )
+//           } else {
+//             console.error(`No se encontró stats[${statistic}]`)
+//           }
+//         })
+//       })
 
-//             if (statValue >= range) {
-//               stats[statistic].scored.overRanges[rangeKey]++
-//             } else {
-//               stats[statistic].scored.underRanges[rangeKey]++
-//             }
+//       // Calcular porcentajes para overRanges y underRanges
+//       statistics.forEach((statistic) => {
+//         ['total', 'received', 'scored'].forEach((type) => {
+//           const totalMatches = stats.matchesTotalFinished
+//           const overRanges = stats[statistic][type].overRanges
+//           const underRanges = stats[statistic][type].underRanges
 
-//             if (receivedValue >= range) {
-//               stats[statistic].received.overRanges[rangeKey]++
-//             } else {
-//               stats[statistic].received.underRanges[rangeKey]++
-//             }
+//           Object.keys(overRanges).forEach((rangeKey) => {
+//             if (overRanges[rangeKey]) {
+//               const overCount = overRanges[rangeKey].count
+//               const underCount = underRanges[rangeKey].count
 
-//             if ((statValue + receivedValue) >= range) {
-//               stats[statistic].total.overRanges[rangeKey]++
-//             } else {
-//               stats[statistic].total.underRanges[rangeKey]++
+//               overRanges[rangeKey].percentage =
+//                 (overCount / totalMatches) * 100
+//               underRanges[rangeKey].percentage =
+//                 (underCount / totalMatches) * 100
 //             }
 //           })
 //         })
@@ -1375,17 +1447,28 @@ const getTeamStats = async (req, res) => {
 
 //     const allTeamIds = Array.from(teamIdsSet)
 //     const teamPromises = allTeamIds.map(async (teamId) => {
-//       let teamMatches = matches.filter(match => match.homeTeam._id.toString() === teamId || match.awayTeam._id.toString() === teamId)
+//       let teamMatches = matches.filter(
+//         (match) =>
+//           match.homeTeam._id.toString() === teamId ||
+//           match.awayTeam._id.toString() === teamId
+//       )
 
 //       if (booleanHomeOnly && !booleanAwayOnly) {
-//         teamMatches = teamMatches.filter(match => match.homeTeam._id.toString() === teamId)
+//         teamMatches = teamMatches.filter(
+//           (match) => match.homeTeam._id.toString() === teamId
+//         )
 //       } else if (!booleanHomeOnly && booleanAwayOnly) {
-//         teamMatches = teamMatches.filter(match => match.awayTeam._id.toString() === teamId)
+//         teamMatches = teamMatches.filter(
+//           (match) => match.awayTeam._id.toString() === teamId
+//         )
 //       }
-//       // Limitar la cantidad de partidos a matchesCount
-//       teamMatches = teamMatches.slice(0, matchesCount)
 
-//       const stats = generateStats(teamMatches, statistics.split(','), parseFloat(lowerLimit), parseFloat(upperLimit), teamId)
+//       // Limitar la cantidad de partidos a analizar
+//       if (matchesCount && matchesCount > 0) {
+//         teamMatches = teamMatches.slice(0, matchesCount)
+//       }
+
+//       const stats = generateStats(teamMatches, statistics.split(','), teamId)
 
 //       const team = await Team.findById(teamId)
 //       return {
@@ -1409,234 +1492,151 @@ const getTeamStats = async (req, res) => {
 //   }
 // }
 
-// ANDA BIEN:
-
 const getAllTeamsStats = async (req, res) => {
   const {
     season,
     statistics, // Expected to be a string with multiple statistics separated by commas
     matchesCount,
     homeOnly = 'true',
-    awayOnly = 'true'
+    awayOnly = 'true',
+    includeAllSeasonMatches = 'false' // Nuevo parámetro de consulta
   } = req.query
 
   try {
     const booleanHomeOnly = homeOnly === 'true'
     const booleanAwayOnly = awayOnly === 'true'
+    const booleanIncludeAllSeasonMatches = includeAllSeasonMatches === 'true'
 
     const query = {
       isFinished: true
     }
 
-    if (season) {
+    if (season && !booleanIncludeAllSeasonMatches) {
       query.seasonYear = season
     }
-
     let teamIds = []
-    if (season) {
-      const seasonData = await Season.findOne({ year: season }).populate(
-        'teams'
-      )
+    if (booleanIncludeAllSeasonMatches && season) {
+      const seasonData = await Season.findById(season).populate('teams')
       if (seasonData) {
         teamIds = seasonData.teams.map((team) => team._id.toString())
       }
     }
+    console.log('teamIds', teamIds)
 
-    if (teamIds.length > 0) {
-      query.$or = [
-        { homeTeam: { $in: teamIds } },
-        { awayTeam: { $in: teamIds } }
-      ]
-    }
+    // if (booleanIncludeAllSeasonMatches && teamIds.length > 0) {
+    //   query.$or = [
+    //     { homeTeam: { $in: teamIds } },
+    //     { awayTeam: { $in: teamIds } }
+    //   ]
+    // }
 
+    // let teamIds = []
+    // if (season) {
+    //   const seasonData = await Season.findOne({ year: '2025' }).populate(
+    //     'teams'
+    //   )
+    //   console.log('seasonData', seasonData)
+
+    //   if (seasonData) {
+    //     teamIds = seasonData.teams.map((team) => team._id.toString())
+    //   }
+    // }
+
+    // console.log('teamIds', teamIds)
+    // if (teamIds.length > 0) {
+    //   query.$or = [
+    //     { homeTeam: { $in: teamIds } },
+    //     { awayTeam: { $in: teamIds } }
+    //   ]
+    // }
+    console.log('QUERY', query)
     const matches = await Match.find(query)
       .sort({ date: -1 })
       .populate('homeTeam awayTeam')
       .populate('seasonYear', 'year')
 
-    // const determineRanges = ([start, end], step) => {
-    //   const ranges = {}
-    //   const precision = step === 1 ? 1 : 2
+    const determineRanges = ([start, end], step) => {
+      const ranges = {}
+      const precision = step === 1 ? 1 : 2
 
-    //   for (let i = start; i <= end; i += step) {
-    //     const rangeKey = i.toFixed(precision).replace('.', '_')
-    //     ranges[rangeKey] = 0 // Inicializar contador en 0 para el rango
-    //   }
-
-    //   return ranges
-    // }
-
-    // const generateStats = (matches, statistics, teamId) => {
-    //   const stats = {
-    //     matchesTotalFinished: matches?.length || 0
-    //   }
-
-    //   statistics.forEach(statistic => {
-    //     stats[statistic] = {
-    //       total: { total: 0, values: [], overRanges: {}, underRanges: {} },
-    //       received: { total: 0, values: [], overRanges: {}, underRanges: {} },
-    //       scored: { total: 0, values: [], overRanges: {}, underRanges: {} }
-    //     }
-
-    //     // Initialize ranges for over and under
-    //     switch (statistic) {
-    //       case 'goals':
-    //         stats[statistic].received.overRanges = determineRanges([0.5, 6.5], 1)
-    //         stats[statistic].scored.overRanges = determineRanges([0.5, 6.5], 1)
-    //         stats[statistic].total.overRanges = determineRanges([0.5, 11.5], 1)
-    //         break
-
-    //       case 'corners':
-    //         stats[statistic].total.overRanges = determineRanges([10.5, 20.5], 2)
-    //         stats[statistic].received.overRanges = determineRanges([6.5, 11.5], 1)
-    //         stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
-    //         break
-
-    //       case 'offsides':
-    //         stats[statistic].total.overRanges = determineRanges([8.5, 16.5], 1)
-    //         stats[statistic].received.overRanges = determineRanges([6.5, 11.5], 1)
-    //         stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
-    //         break
-
-    //       case 'yellowCards':
-    //         stats[statistic].total.overRanges = determineRanges([3.5, 8.5], 1)
-    //         stats[statistic].received.overRanges = determineRanges([1.5, 5.5], 1)
-    //         stats[statistic].scored.overRanges = determineRanges([1.5, 5.5], 1)
-    //         break
-
-    //       case 'shots':
-    //         stats[statistic].total.overRanges = determineRanges([18.5, 30.5], 2)
-    //         stats[statistic].received.overRanges = determineRanges([18.5, 30.5], 2)
-    //         stats[statistic].scored.overRanges = determineRanges([18.5, 30.5], 2)
-    //         break
-
-    //       case 'shotsOnTarget':
-    //         stats[statistic].total.overRanges = determineRanges([5.5, 16.5], 2)
-    //         stats[statistic].received.overRanges = determineRanges([5.5, 11.5], 2)
-    //         stats[statistic].scored.overRanges = determineRanges([5.5, 11.5], 2)
-    //         break
-
-    //       default:
-    //         break
-    //     }
-
-    //     // Initialize underRanges based on overRanges for each category
-    //     ['total', 'received', 'scored'].forEach(type => {
-    //       const overRanges = stats[statistic][type].overRanges
-    //       Object.keys(overRanges).forEach(rangeKey => {
-    //         stats[statistic][type].underRanges[rangeKey] = 0
-    //       })
-    //     })
-    //   })
-
-    //   matches.forEach((match) => {
-    //     const isHomeTeam = match.homeTeam._id.toString() === teamId
-    //     const teamStats = isHomeTeam ? match.teamStatistics.local : match.teamStatistics.visitor
-    //     const opponentStats = isHomeTeam ? match.teamStatistics.visitor : match.teamStatistics.local
-
-    //     statistics.forEach(statistic => {
-    //       const statValue = teamStats[statistic]
-    //       const receivedValue = opponentStats[statistic]
-
-    //       stats[statistic].scored.total += statValue
-    //       stats[statistic].scored.values.push(statValue)
-
-    //       stats[statistic].received.total += receivedValue
-    //       stats[statistic].received.values.push(receivedValue)
-
-    //       stats[statistic].total.total += statValue + receivedValue
-    //       stats[statistic].total.values.push(statValue + receivedValue)
-
-    //       Object.keys(stats[statistic].total.overRanges).forEach(rangeKey => {
-    //         const range = parseFloat(rangeKey.replace('_', '.'))
-
-    //         // Update overRanges and underRanges for scored
-    //         if (statValue >= range) {
-    //           stats[statistic].scored.overRanges[rangeKey]++
-    //         } else {
-    //           stats[statistic].scored.underRanges[rangeKey]++
-    //         }
-
-    //         // Update overRanges and underRanges for received
-    //         if (receivedValue >= range) {
-    //           stats[statistic].received.overRanges[rangeKey]++
-    //         } else {
-    //           stats[statistic].received.underRanges[rangeKey]++
-    //         }
-
-    //         // Update overRanges and underRanges for total
-    //         if ((statValue + receivedValue) >= range) {
-    //           stats[statistic].total.overRanges[rangeKey]++
-    //         } else {
-    //           stats[statistic].total.underRanges[rangeKey]++
-    //         }
-    //       })
-    //     })
-    //   })
-
-    //   // Remove nulls from underRanges
-    //   statistics.forEach(statistic => {
-    //     ['total', 'received', 'scored'].forEach(type => {
-    //       const underRanges = stats[statistic][type].underRanges
-    //       Object.keys(underRanges).forEach(rangeKey => {
-    //         if (underRanges[rangeKey] === null) {
-    //           delete underRanges[rangeKey]
-    //         }
-    //       })
-    //     })
-    //   })
-
-    //   return stats
-    // }
+      for (let i = start; i <= end; i += step) {
+        const rangeKey = i.toFixed(precision).replace('.', '_')
+        ranges[rangeKey] = { count: 0, percentage: 0 }
+      }
+      return ranges
+    }
 
     const generateStats = (matches, statistics, teamId) => {
       const stats = {
         matchesTotalFinished: matches?.length || 0
       }
 
-      // Verificar si statistics está vacío o no definido
       if (!statistics || statistics.length === 0) {
         console.error('No se proporcionaron estadísticas válidas.')
-        return stats // Devolver stats vacío o inicializado según sea necesario
-      }
-
-      // Función para determinar los rangos con sus propiedades count y percentage
-      const determineRanges = ([start, end], step) => {
-        const ranges = {}
-        const precision = step === 1 ? 1 : 2
-
-        for (let i = start; i <= end; i += step) {
-          const rangeKey = i.toFixed(precision).replace('.', '_')
-          ranges[rangeKey] = { count: 0, percentage: 0 } // Inicializar contador y porcentaje en 0 para el rango
-        }
-
-        return ranges
+        return stats
       }
 
       statistics.forEach((statistic) => {
-        // Asegurarse de inicializar stats[statistic] correctamente
         stats[statistic] = {
           total: {
             total: 0,
             values: [],
-            overRanges: determineRanges([0.5, 11.5], 1),
+            overRanges: {},
             underRanges: {}
           },
           received: {
             total: 0,
             values: [],
-            overRanges: determineRanges([0.5, 11.5], 1),
+            overRanges: {},
             underRanges: {}
           },
           scored: {
             total: 0,
             values: [],
-            overRanges: determineRanges([0.5, 6.5], 1),
+            overRanges: {},
             underRanges: {}
           }
-        };
+        }
 
-        // Initialize underRanges based on overRanges for each category
+        switch (statistic) {
+          case 'possession':
+            stats[statistic].received.overRanges = determineRanges([40.5, 99.5], 5)
+            stats[statistic].scored.overRanges = determineRanges([40.5, 99.5], 5)
+            break
+          case 'goals':
+            stats[statistic].received.overRanges = determineRanges([0.5, 6.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([0.5, 6.5], 1)
+            stats[statistic].total.overRanges = determineRanges([2.5, 11.5], 1)
+            break
+          case 'corners':
+            stats[statistic].total.overRanges = determineRanges([10.5, 20.5], 2)
+            stats[statistic].received.overRanges = determineRanges([6.5, 11.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
+            break
+          case 'offsides':
+            stats[statistic].total.overRanges = determineRanges([8.5, 16.5], 1)
+            stats[statistic].received.overRanges = determineRanges([6.5, 11.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
+            break
+          case 'yellowCards':
+            stats[statistic].total.overRanges = determineRanges([3.5, 8.5], 1)
+            stats[statistic].received.overRanges = determineRanges([1.5, 5.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([1.5, 5.5], 1)
+            break
+          case 'shots':
+            stats[statistic].total.overRanges = determineRanges([18.5, 30.5], 2)
+            stats[statistic].received.overRanges = determineRanges([18.5, 30.5], 2)
+            stats[statistic].scored.overRanges = determineRanges([18.5, 30.5], 2)
+            break
+          case 'shotsOnTarget':
+            stats[statistic].total.overRanges = determineRanges([5.5, 16.5], 2)
+            stats[statistic].received.overRanges = determineRanges([5.5, 11.5], 2)
+            stats[statistic].scored.overRanges = determineRanges([5.5, 11.5], 2)
+            break
+          default:
+            break
+        }
+
         ['total', 'received', 'scored'].forEach((type) => {
           const overRanges = stats[statistic][type].overRanges
           Object.keys(overRanges).forEach((rangeKey) => {
@@ -1648,7 +1648,6 @@ const getAllTeamsStats = async (req, res) => {
         })
       })
 
-      // Procesar matches y calcular estadísticas
       matches.forEach((match) => {
         const isHomeTeam = match.homeTeam._id.toString() === teamId
         const teamStats = isHomeTeam
@@ -1662,7 +1661,6 @@ const getAllTeamsStats = async (req, res) => {
           const statValue = teamStats[statistic]
           const receivedValue = opponentStats[statistic]
 
-          // Verificar si stats[statistic] está definido antes de acceder a sus propiedades
           if (stats[statistic]) {
             stats[statistic].scored.total += statValue
             stats[statistic].scored.values.push(statValue)
@@ -1675,7 +1673,18 @@ const getAllTeamsStats = async (req, res) => {
               (rangeKey) => {
                 const range = parseFloat(rangeKey.replace('_', '.'))
 
-                // Update overRanges and underRanges for scored
+                if (stats[statistic].total.overRanges[rangeKey]) {
+                  if (statValue + receivedValue >= range) {
+                    stats[statistic].total.overRanges[rangeKey].count++
+                  } else {
+                    stats[statistic].total.underRanges[rangeKey].count++
+                  }
+                }
+              }
+            )
+            Object.keys(stats[statistic].scored.overRanges).forEach(
+              (rangeKey) => {
+                const range = parseFloat(rangeKey.replace('_', '.'))
                 if (stats[statistic].scored.overRanges[rangeKey]) {
                   if (statValue >= range) {
                     stats[statistic].scored.overRanges[rangeKey].count++
@@ -1683,22 +1692,17 @@ const getAllTeamsStats = async (req, res) => {
                     stats[statistic].scored.underRanges[rangeKey].count++
                   }
                 }
+              }
+            )
+            Object.keys(stats[statistic].received.overRanges).forEach(
+              (rangeKey) => {
+                const range = parseFloat(rangeKey.replace('_', '.'))
 
-                // Update overRanges and underRanges for received
                 if (stats[statistic].received.overRanges[rangeKey]) {
                   if (receivedValue >= range) {
                     stats[statistic].received.overRanges[rangeKey].count++
                   } else {
                     stats[statistic].received.underRanges[rangeKey].count++
-                  }
-                }
-
-                // Update overRanges and underRanges for total
-                if (stats[statistic].total.overRanges[rangeKey]) {
-                  if (statValue + receivedValue >= range) {
-                    stats[statistic].total.overRanges[rangeKey].count++
-                  } else {
-                    stats[statistic].total.underRanges[rangeKey].count++
                   }
                 }
               }
@@ -1709,7 +1713,6 @@ const getAllTeamsStats = async (req, res) => {
         })
       })
 
-      // Calcular porcentajes para overRanges y underRanges
       statistics.forEach((statistic) => {
         ['total', 'received', 'scored'].forEach((type) => {
           const totalMatches = stats.matchesTotalFinished
@@ -1757,7 +1760,6 @@ const getAllTeamsStats = async (req, res) => {
         )
       }
 
-      // Limitar la cantidad de partidos a analizar
       if (matchesCount && matchesCount > 0) {
         teamMatches = teamMatches.slice(0, matchesCount)
       }
@@ -1774,12 +1776,15 @@ const getAllTeamsStats = async (req, res) => {
 
     const results = await Promise.all(teamPromises)
 
-    const allStats = results.map(({ teamId, team, stats }) => ({
+    let allStats = results.map(({ team, stats }) => ({
       team,
       stats
     }))
+    if (booleanIncludeAllSeasonMatches) {
+      allStats = allStats.filter(stat => teamIds.includes(stat.team._id.toString()))
+    }
 
-    res.status(200).json(allStats)
+    return res.status(200).json(allStats)
   } catch (error) {
     console.error('Error fetching matches:', error)
     res.status(500).send('An error occurred while fetching matches')
