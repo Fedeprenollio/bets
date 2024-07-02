@@ -1,6 +1,18 @@
 import express from 'express'
 import { controllers } from '../controllers/season.controller.js'
-import { addTeamToZone, addTeamsToZoneAndCreateZone, addZoneToSeason, deleteTeamFromZone, deleteZoneFromSeason, getTeamFromZone, getTeamsFromZone, getZoneFromSeason, getZonesFromSeason, updateTeamInZone, updateZoneInSeason } from '../controllers/zone.controller.js'
+import {
+  addTeamToZone,
+  addTeamsToZoneAndCreateZone,
+  addZoneToSeason,
+  deleteTeamFromZone,
+  deleteZoneFromSeason,
+  getTeamFromZone,
+  getTeamsFromZone,
+  getZoneFromSeason,
+  getZonesFromSeason,
+  updateTeamInZone,
+  updateZoneInSeason
+} from '../controllers/zone.controller.js'
 
 // Crear un nuevo Router
 export const seasonRouter = express.Router()
@@ -11,6 +23,7 @@ seasonRouter.post('/', controllers.createSeason)
 // Ruta para obtener todas las temporadas
 seasonRouter.get('/', controllers.getAllSeasons)
 
+seasonRouter.get('/currentSeasons', controllers.getAllCurrentSeasons)
 // Ruta para obtener una temporada por su ID
 seasonRouter.get('/:id', controllers.getSeasonById)
 
@@ -18,6 +31,8 @@ seasonRouter.put('/:id', controllers.updateSeasonById)
 
 // Ruta para eliminar una temporada por su ID
 seasonRouter.delete('/:id', controllers.deleteSeasonById)
+
+// Ruta para obtener todas las temporadas actuales
 
 // Ruta para obtener todas las temporadas de una liga por su ID de liga
 seasonRouter.get('/league/:leagueId', controllers.getSeasonsByLeagueId)

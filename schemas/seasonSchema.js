@@ -24,6 +24,9 @@ const seasonSchema = new mongoose.Schema({
   isCurrentSeason: {
     type: Boolean
   },
+  isMainSeason: {
+    type: Boolean
+  },
   fechas: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Fecha'
