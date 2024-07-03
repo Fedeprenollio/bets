@@ -157,14 +157,25 @@ const isCurrentSeason = async (req, res) => {
   }
 }
 
-// Controlador para eliminar una temporada por su ID
+// // Controlador para eliminar una temporada por su ID
+// const deleteSeasonById = async (req, res) => {
+//   try {
+//     const season = await Season.findById(req.params.id)
+//     if (!season) {
+//       return res.status(404).json({ message: 'Season not found' })
+//     }
+//     await season.remove()
+//     res.json({ message: 'Season deleted' })
+//   } catch (error) {
+//     res.status(500).json({ message: error.message })
+//   }
+// }
 const deleteSeasonById = async (req, res) => {
   try {
-    const season = await Season.findById(req.params.id)
-    if (!season) {
+    const result = await Season.deleteOne({ _id: req.params.id })
+    if (result.deletedCount === 0) {
       return res.status(404).json({ message: 'Season not found' })
     }
-    await season.remove()
     res.json({ message: 'Season deleted' })
   } catch (error) {
     res.status(500).json({ message: error.message })
