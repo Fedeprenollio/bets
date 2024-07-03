@@ -2186,18 +2186,18 @@ const getAllTeamsStats = async (req, res) => {
             break
           case 'corners':
             stats[statistic].total.overRanges = determineRanges([10.5, 20.5], 2)
-            stats[statistic].received.overRanges = determineRanges([6.5, 11.5], 1)
-            stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
+            stats[statistic].received.overRanges = determineRanges([0.5, 8.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([0.5, 8.5], 1)
             break
           case 'offsides':
-            stats[statistic].total.overRanges = determineRanges([8.5, 16.5], 2)
-            stats[statistic].received.overRanges = determineRanges([6.5, 11.5], 1)
-            stats[statistic].scored.overRanges = determineRanges([6.5, 11.5], 1)
+            stats[statistic].total.overRanges = determineRanges([0.5, 9.5], 2)
+            stats[statistic].received.overRanges = determineRanges([0.5, 4.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([0.5, 45], 1)
             break
           case 'yellowCards':
             stats[statistic].total.overRanges = determineRanges([3.5, 8.5], 1)
-            stats[statistic].received.overRanges = determineRanges([1.5, 5.5], 1)
-            stats[statistic].scored.overRanges = determineRanges([1.5, 5.5], 1)
+            stats[statistic].received.overRanges = determineRanges([0.5, 5.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([0.5, 5.5], 1)
             break
           case 'shots':
             stats[statistic].total.overRanges = determineRanges([18.5, 30.5], 2)
