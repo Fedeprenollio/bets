@@ -2301,9 +2301,9 @@ const getAllTeamsStats = async (req, res) => {
               const underCount = underRanges[rangeKey].count
 
               overRanges[rangeKey].percentage =
-                (overCount / totalMatches) * 100
+                ((overCount / totalMatches) * 100).toFixed(2)
               underRanges[rangeKey].percentage =
-                (underCount / totalMatches) * 100
+               ((underCount / totalMatches) * 100).toFixed(2)
             }
           })
         })
