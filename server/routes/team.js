@@ -31,7 +31,7 @@ teamRouter.get('/', async (req, res) => {
 teamRouter.get('/search/:name', async (req, res) => {
   const name = req.params.name
   try {
-    const equipos = await Team.find({ name: { $regex: name, $options: 'i' } })
+    const equipos = await Team.find({ name: { $regex: name, $options: 'i' } }).limit(10)
     res.send(equipos)
   } catch (error) {
     res.status(500).send(error)
