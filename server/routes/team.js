@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { Team } from '../../schemas/team.js'
-import { Match } from '../../schemas/match.js'
 import { methods as authorization } from '../middleware/authentication.js'
 import { verifyToken } from '../middleware/verifyToken .js'
 import { Season } from '../../schemas/seasonSchema.js'
@@ -123,5 +122,27 @@ teamRouter.get('/:id/leagues-seasons', async (req, res) => {
   } catch (error) {
     console.error('Error fetching leagues and seasons:', error)
     res.status(500).send({ message: 'An error occurred while fetching leagues and seasons' })
+  }
+})
+
+teamRouter.put('/:id', async (req, res) => {
+  const { id } = req.params
+  const { name, country, logo } = req.body
+
+  try {
+    const updatedTeam = await Team.findByIdAndUpdate(
+      id,
+      { name, country, logo },
+      { new: true }
+    )
+
+    if (!updatedTeam) {
+      return res.status(404).json({ message: 'Equipo no encontrado' })
+    }
+
+    res.status(200).json(updatedTeam)
+  } catch (error) {
+    console.error('Error al actualizar el equipo:', error)
+    res.status(500).json({ message: 'Error al actualizar el equipo' })
   }
 })
