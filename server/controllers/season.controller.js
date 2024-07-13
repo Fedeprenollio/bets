@@ -564,7 +564,6 @@ const getTablePosition = async (req, res) => {
 
 // Controlador para obtener todas las temporadas que son la actual (isCurrentSeason = true)
 const getAllCurrentSeasons = async (req, res) => {
-  console.log('GOLA')
   try {
     const currentSeasons = await Season.find({ isCurrentSeason: true }).populate('league')
     res.json(currentSeasons)
