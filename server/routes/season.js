@@ -17,6 +17,8 @@ import {
 // Crear un nuevo Router
 export const seasonRouter = express.Router()
 
+// // Ruta para obtener los equipos de una temporada
+// seasonRouter.get('/:season/teams', controllers.getAllTeamsSeason)
 // Ruta para crear una nueva temporada
 seasonRouter.post('/', controllers.createSeason)
 

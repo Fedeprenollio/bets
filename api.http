@@ -1,5 +1,5 @@
 ###Listar equipos
-GET http://localhost:1234/team
+GET http://localhost:1234/team/search/union
 
 ###Listar un equipo por id
 GET http://localhost:1234/team/664accaa81ee69cfdd0b069d

@@ -62,6 +62,7 @@ async function createLeague (req, res) {
 
 // Actualizar una liga
 async function updateLeague (req, res) {
+  console.log(req.body)
   try {
     const league = await League.findById(req.params.id)
     if (req.body.name != null) {
@@ -73,7 +74,11 @@ async function updateLeague (req, res) {
     if (req.body.season != null) {
       league.season = req.body.season
     }
+    if (req.body.logo != null) {
+      league.logo = req.body.logo
+    }
     const updatedLeague = await league.save()
+    console.log('updatedLeague', updatedLeague)
     res.json(updatedLeague)
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -150,7 +155,6 @@ async function getLeagueById (req, res) {
         season.fechas.sort((a, b) => a.order - b.order)
       }
     })
-    console.log('LIGA', league)
     res.json(league)
   } catch (error) {
     res.status(500).json({ message: error.message })

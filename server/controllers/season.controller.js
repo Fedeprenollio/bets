@@ -4,6 +4,7 @@ import { League } from '../../schemas/leagueSchema.js'
 import { Match } from '../../schemas/match.js'
 import { Fecha } from '../../schemas/fechaSchema.js'
 import { calculatePositionTables } from '../services/tablePositions.js'
+import { Team } from '../../schemas/team.js'
 
 // Controlador para crear una nueva temporada
 const createSeason = async (req, res) => {
@@ -563,13 +564,31 @@ const getTablePosition = async (req, res) => {
 
 // Controlador para obtener todas las temporadas que son la actual (isCurrentSeason = true)
 const getAllCurrentSeasons = async (req, res) => {
-  console.log('GOLA')
   try {
     const currentSeasons = await Season.find({ isCurrentSeason: true }).populate('league')
     res.json(currentSeasons)
   } catch (error) {
     console.log('error,', error)
     res.status(500).json({ message: error.message })
+  }
+}
+
+// Ruta para obtener todos los equipos de una temporada específica
+const getAllTeamsSeason = async (req, res) => {
+  const { season } = req.params
+
+  try {
+    // Busca todos los equipos que pertenezcan a la temporada especificada
+    const teams = await Team.find({ season }) // Ajusta según cómo esté estructurado tu modelo
+    console.log('EQUIPOS', teams)
+    if (!teams) {
+      return res.status(404).json({ message: 'No se encontraron equipos para la temporada especificada' })
+    }
+
+    res.status(200).json(teams)
+  } catch (error) {
+    console.error('Error al obtener equipos:', error)
+    res.status(500).json({ message: 'Error del servidor al obtener equipos' })
   }
 }
 
@@ -584,5 +603,6 @@ export const controllers = {
   getSeasonMatchesByRound,
   isCurrentSeason,
   getTablePosition,
-  getAllCurrentSeasons
+  getAllCurrentSeasons,
+  getAllTeamsSeason
 }

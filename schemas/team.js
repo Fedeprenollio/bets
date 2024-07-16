@@ -6,9 +6,12 @@ const teamSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  country: String
-  // city: String
-  // league: String
+  country: String,
+  logo: {
+    type: String, // URL de la imagen del escudo del club
+    required: false
+  }
+
 })
 
 export const Team = mongoose.model('Team', teamSchema)
