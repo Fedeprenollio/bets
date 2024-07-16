@@ -123,7 +123,10 @@ Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoicHVjaG8iL
 GET http://localhost:1234/season/664acc7b81ee69cfdd0b068d/positions
 
 ### Temporada
-GET http://localhost:1234/season/664acc7b81ee69cfdd0b068d
+GET http://localhost:1234/season/66418be029b5580180cd252a
+
+### Temporada
+DELETE http://localhost:1234/season/66477315e620bf8d2d91fbcc
 
 ###Estadisticas por acumulado como pidio Dani y con queries
 GET  http://localhost:1234/match/statsAc/664acca681ee69cfdd0b069b?statistic=shots&lowerLimit=0.5&upperLimit=22.5&matchesCount=10&homeOnly=true&awayOnly=true&lessThan=false
@@ -186,4 +189,4 @@ Content-Type: application/json
 GET  http://localhost:1234/fecha/66477315e620bf8d2d91fbcc
 
 ### Temporada
-GET http://localhost:1234/season/66477315e620bf8d2d91fbcc
+GET http://localhost:1234/season/664cbaabfa500cb52f1e1df0

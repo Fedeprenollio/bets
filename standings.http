@@ -13,3 +13,15 @@ GET  http://localhost:1234/standings/6637dbf7b2a2deab04a69a97/team/66200abf18009
 
 ###Listar equipos
 GET  http://localhost:1234/standings/6637dbf7b2a2deab04a69a97
+
+### VER ESTADISTICAS DE MUCHOS EQUIPOS
+GET http://localhost:1234/match/stats?season=664cbaabfa500cb52f1e1df0&statistics=goals,offsides,yellowCards,corners,shots,shotsOnTarget&homeOnly=true&awayOnly=true&matchesCount=2
+
+
+
+###Prueba 2
+GET http://localhost:1234/match/stats?statistics=goals,offsides,yellowCards,corners,shots,shotsOnTarget&matchesCount=10&homeOnly=true&awayOnly=true
+
+### VER ESTADISTICAS DE MUCHOS EQUIPOS sin PONER COUNTRY NI SEASON
+GET http://localhost:1234/match/stats?statistics=goals,offsides,yellowCards,corners,shots,shotsOnTarget&homeOnly=true&awayOnly=true&lowerLimit=1&upperLimit=10&lessThan=false&matchesCount=3
+
