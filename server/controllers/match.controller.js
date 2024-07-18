@@ -2357,13 +2357,6 @@ const getAllTeamsStats = async (req, res) => {
       const setSeasonData = new Set(seasonData.map(s => s.league))
       const leaguesString = Array.from(setSeasonData).join(', ')
 
-      if (seasonData) {
-        console.log('Season found:', seasonData)
-        console.log('setSeasonData', leaguesString)
-      } else {
-        console.log('Season not found in seasonIds:', seasonIds)
-      }
-
       return {
         teamId,
         team,

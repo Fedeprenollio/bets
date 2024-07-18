@@ -11,7 +11,6 @@ export const getMatchesAndStats = async ({
   booleanLessThan
 }) => {
   let matches = []
-
   if (contextType === 'season') {
     matches = await Match.find({ ...query, season: contextId })
       .sort({ date: -1 })

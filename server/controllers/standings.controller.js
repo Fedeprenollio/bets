@@ -98,152 +98,19 @@ const tieBreaker = (teamA, teamB, country, matches) => {
   }
   return 0
 }
-// const calculateStats = (matches, country) => {
-//   const teamStatsMap = {}
 
-//   matches.forEach((match) => {
-//     const { homeTeam, awayTeam, teamStatistics } = match
-//     const homeGoals = teamStatistics.local.goals
-//     const awayGoals = teamStatistics.visitor.goals
-
-//     const updateTeamStats = (team, goalsFor, goalsAgainst, isHome) => {
-//       if (!teamStatsMap[team._id]) {
-//         teamStatsMap[team._id] = {
-//           team,
-//           allStats: {
-//             matchesPlayed: 0,
-//             matchesWon: 0,
-//             matchesLost: 0,
-//             matchesDrawn: 0,
-//             goalsFor: 0,
-//             goalsAgainst: 0,
-//             goalDifference: 0,
-//             points: 0
-//           },
-//           statsHome: {
-//             matchesPlayed: 0,
-//             matchesWon: 0,
-//             matchesLost: 0,
-//             matchesDrawn: 0,
-//             goalsFor: 0,
-//             goalsAgainst: 0,
-//             goalDifference: 0,
-//             points: 0
-//           },
-//           statsVisitor: {
-//             matchesPlayed: 0,
-//             matchesWon: 0,
-//             matchesLost: 0,
-//             matchesDrawn: 0,
-//             goalsFor: 0,
-//             goalsAgainst: 0,
-//             goalDifference: 0,
-//             points: 0
-//           }
-//         }
-//       }
-
-//       const stats = teamStatsMap[team._id]
-
-//       stats.allStats.matchesPlayed++
-//       if (isHome) {
-//         stats.statsHome.matchesPlayed++
-//       } else {
-//         stats.statsVisitor.matchesPlayed++
-//       }
-
-//       stats.allStats.goalsFor += goalsFor
-//       stats.allStats.goalsAgainst += goalsAgainst
-//       if (isHome) {
-//         stats.statsHome.goalsFor += goalsFor
-//         stats.statsHome.goalsAgainst += goalsAgainst
-//       } else {
-//         stats.statsVisitor.goalsFor += goalsFor
-//         stats.statsVisitor.goalsAgainst += goalsAgainst
-//       }
-
-//       if (goalsFor > goalsAgainst) {
-//         stats.allStats.matchesWon++
-//         if (isHome) {
-//           stats.statsHome.matchesWon++
-//         } else {
-//           stats.statsVisitor.matchesWon++
-//         }
-//       } else if (goalsFor < goalsAgainst) {
-//         stats.allStats.matchesLost++
-//         if (isHome) {
-//           stats.statsHome.matchesLost++
-//         } else {
-//           stats.statsVisitor.matchesLost++
-//         }
-//       } else {
-//         stats.allStats.matchesDrawn++
-//         if (isHome) {
-//           stats.statsHome.matchesDrawn++
-//         } else {
-//           stats.statsVisitor.matchesDrawn++
-//         }
-//       }
-
-//       stats.allStats.goalDifference = stats.allStats.goalsFor - stats.allStats.goalsAgainst
-//       stats.allStats.points = stats.allStats.matchesWon * 3 + stats.allStats.matchesDrawn
-//       stats.statsHome.goalDifference = stats.statsHome.goalsFor - stats.statsHome.goalsAgainst
-//       stats.statsHome.points = stats.statsHome.matchesWon * 3 + stats.statsHome.matchesDrawn
-//       stats.statsVisitor.goalDifference = stats.statsVisitor.goalsFor - stats.statsVisitor.goalsAgainst
-//       stats.statsVisitor.points = stats.statsVisitor.matchesWon * 3 + stats.statsVisitor.matchesDrawn
-//     }
-
-//     updateTeamStats(homeTeam, homeGoals, awayGoals, true)
-//     updateTeamStats(awayTeam, awayGoals, homeGoals, false)
-//   })
-
-//   const teamStats = Object.values(teamStatsMap)
-
-//   teamStats.sort((teamA, teamB) => {
-//     if (teamA.allStats.points !== teamB.allStats.points) {
-//       return teamB.allStats.points - teamA.allStats.points
-//     } else {
-//       return tieBreaker(teamA, teamB, country, matches)
-//     }
-//   })
-
-//   return teamStats
-// }
-// const getStandingsBySeason = async (req, res) => {
-//   try {
-//     const { seasonId } = req.params
-//     const allMatches = await Match.find({ seasonYear: seasonId, isFinished: true }).populate('homeTeam').populate('awayTeam')
-//     const season = await Season.findById(seasonId)
-//     const leagueId = season.league
-//     const league = await League.findById(leagueId)
-
-//     if (!league.country) {
-//       return res.status(404).json({ message: 'No country found for the specified season' })
-//     }
-
-//     // const allStats = calculateStats(allMatches)
-//     const allStats = calculateStats(allMatches, league.country)
-//     // Map each team data to include populated team information
-//     const populatedStandings = allStats.map((teamData) => ({
-//       team: teamData.team,
-//       allStats: teamData.allStats,
-//       statsHome: teamData.statsHome,
-//       statsVisitor: teamData.statsVisitor
-//     }))
-
-//     res.status(200).json({ table: populatedStandings })
-//   } catch (error) {
-//     console.error('Error getting standings:', error)
-//     res.status(500).json({ error: 'Internal server error' })
-//   }
-// }
 const calculateStats = (matches, country) => {
+  console.log('matchesSS', matches)
   const teamStatsMap = {}
 
   matches.forEach((match) => {
-    const { homeTeam, awayTeam, teamStatistics } = match
+    const { homeTeam, awayTeam, teamStatistics, round } = match
     const homeGoals = teamStatistics.local.goals
     const awayGoals = teamStatistics.visitor.goals
+
+    const isPlayoff = isNaN(round)
+    // Si es un partido de playoff, salta el procesamiento de este partido
+    if (isPlayoff) return
 
     const updateTeamStats = (team, goalsFor, goalsAgainst, isHome) => {
       if (!teamStatsMap[team._id]) {
@@ -355,6 +222,7 @@ const calculateZoneStats = (allStats, zoneTeams) => {
 }
 
 const getStandingsBySeason = async (req, res) => {
+  console.log('YESSSS')
   try {
     const { seasonId } = req.params
     const allMatches = await Match.find({ seasonYear: seasonId, isFinished: true }).populate('homeTeam').populate('awayTeam')

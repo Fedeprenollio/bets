@@ -229,6 +229,7 @@ const getAllTablesByZone = async (req, res) => {
 // }
 
 const updatePositionTables = async (req, res) => {
+  console.log('Calculando POSCIONES')
   try {
     const { seasonId } = req.body
 

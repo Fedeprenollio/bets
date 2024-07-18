@@ -66,6 +66,8 @@ function initializeTeamData () {
 }
 
 function updateTeamData (teamData, teamStats, opponentStats) {
+  console.log('ARGENINA')
+
   if (!teamData) {
     teamData = initializeTeamData()
   }

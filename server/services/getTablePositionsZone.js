@@ -3,6 +3,7 @@ import { PositionTable } from '../../schemas/tablePositionsSchema.js'
 import { Zone } from '../../schemas/zoneSchema.js'
 
 export async function calculatePositionTablesZone (seasonID, zoneId) {
+  console.log('brasil')
   const zone = await Zone.findById(zoneId).populate('matches')
 
   if (!zone) {
