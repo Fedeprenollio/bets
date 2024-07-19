@@ -249,9 +249,9 @@ const createMatch = async (req, res) => {
 // }
 const updateMatchResult = async (req, res) => {
   try {
-    const { goalsHome, goalsAway, teamStatistics } = req.body
+    const { goalsHome, goalsAway, teamStatistics, penaltyResult } = req.body
     const matchId = req.params.id
-
+    console.log('penaltyResult', penaltyResult)
     // Buscar el partido por ID
     const match = await Match.findById(matchId)
     if (!match) {
@@ -278,6 +278,14 @@ const updateMatchResult = async (req, res) => {
     match.goalsHome = goalsHome
     match.goalsAway = goalsAway
     match.isFinished = true
+
+    // Si se proporciona resultado de penales, actualizarlo
+    if (penaltyResult) {
+      match.penaltyResult = {
+        homePenalties: penaltyResult.homePenalties || 0,
+        awayPenalties: penaltyResult.awayPenalties || 0
+      }
+    }
 
     // Guardar el partido actualizado
     await match.save()

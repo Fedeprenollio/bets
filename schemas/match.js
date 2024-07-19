@@ -59,6 +59,16 @@ const matchSchema = new mongoose.Schema({
   },
   round: { // fecha ej: 4ta, 5ta Antes matchDate
     type: String
+  },
+  penaltyResult: { // Resultado de penales (opcional)
+    homePenalties: {
+      type: Number,
+      default: 0
+    },
+    awayPenalties: {
+      type: Number,
+      default: 0
+    }
   }
 
 })
