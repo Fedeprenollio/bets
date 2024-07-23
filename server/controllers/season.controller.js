@@ -5,6 +5,8 @@ import { Match } from '../../schemas/match.js'
 import { Fecha } from '../../schemas/fechaSchema.js'
 import { calculatePositionTables } from '../services/tablePositions.js'
 import { Team } from '../../schemas/team.js'
+import { PositionTable } from '../../schemas/tablePositionsSchema.js'
+import { Zone } from '../../schemas/zoneSchema.js'
 
 // Controlador para crear una nueva temporada
 const createSeason = async (req, res) => {
@@ -199,8 +201,6 @@ const getSeasonsByLeagueId = async (req, res) => {
   }
 }
 
-// Controlador para agregar múltiples partidos a una temporada por su ID
-// const addMatchesToSeason = async (req, res) => {
 //   try {
 //     // Obtener el ID de la temporada desde los parámetros de la ruta
 //     const seasonId = req.params.id
@@ -425,7 +425,6 @@ const addMatchesToSeason = async (req, res) => {
 
     // Obtener la lista de partidos desde el cuerpo de la solicitud
     const matches = req.body.matches
-    console.log('DATA DEL MATCH', matches)
 
     // Buscar la temporada por su ID
     const season = await Season.findById(seasonId).populate('zones')
@@ -592,6 +591,43 @@ const getAllTeamsSeason = async (req, res) => {
   }
 }
 
+const deleteSeasonInfoFull = async (req, res) => {
+  try {
+    const { seasonId } = req.params
+    // Encuentra la temporada y obtén las zonas relacionadas
+    const season = await Season.findById(seasonId)
+    if (!season) {
+      return res.status(404).json({ message: 'Temporada no encontrada' })
+    }
+
+    const zoneIds = season.zones || []
+
+    // Elimina todas las zonas relacionadas
+    for (const zoneId of zoneIds) {
+      await Zone.findByIdAndDelete(zoneId)
+    }
+
+    // Eliminar PositionTable asociada a la temporada
+    await PositionTable.deleteMany({ season: seasonId })
+
+    // Eliminar todos los partidos asociados a cada fecha
+
+    await Match.deleteMany({ seasonYear: seasonId })
+
+    // Eliminar todas las fechas asociadas a la temporada
+    await Fecha.deleteMany({ season: seasonId })
+
+    // Eliminar la temporada
+
+    await Season.findByIdAndDelete(seasonId)
+
+    res.status(200).json({ message: 'Temporada y todos sus datos asociados eliminados exitosamente' })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error al eliminar la temporada', error })
+  }
+}
+
 export const controllers = {
   createSeason,
   getAllSeasons,
@@ -604,5 +640,6 @@ export const controllers = {
   isCurrentSeason,
   getTablePosition,
   getAllCurrentSeasons,
-  getAllTeamsSeason
+  getAllTeamsSeason,
+  deleteSeasonInfoFull
 }

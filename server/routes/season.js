@@ -34,6 +34,9 @@ seasonRouter.put('/:id', controllers.updateSeasonById)
 // Ruta para eliminar una temporada por su ID
 seasonRouter.delete('/:id', controllers.deleteSeasonById)
 
+// Ruta para eliminar una temporada por su ID con todas sus fechas, partidos y su tabla
+seasonRouter.delete('/:seasonId/full', controllers.deleteSeasonInfoFull)
+
 // Ruta para obtener todas las temporadas actuales
 
 // Ruta para obtener todas las temporadas de una liga por su ID de liga
