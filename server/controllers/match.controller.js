@@ -2949,7 +2949,7 @@ const getTeamStatsNew = async (req, res) => {
     position = 'false'
   } = req.query
   const { teamId } = req.params
-  console.log('position...', position)
+  console.log('teamId...', teamId)
 
   try {
     const booleanHomeOnly = homeOnly === 'true'
@@ -2957,8 +2957,16 @@ const getTeamStatsNew = async (req, res) => {
     const booleanIncludeAllSeasonMatches = includeAllSeasonMatches === 'true'
     const booleanPosition = position !== 'false'
 
+    // const query = {
+    //   isFinished: true
+    // }
+
     const query = {
-      isFinished: true
+      isFinished: true,
+      $or: [
+        { homeTeam: teamId },
+        { awayTeam: teamId }
+      ]
     }
 
     let seasonIds = []
@@ -3025,6 +3033,9 @@ const getTeamStatsNew = async (req, res) => {
         })
       }
     }
+
+    console.log('QUERY', query)
+
     const matches = await Match.find(query)
       .sort({ date: -1 })
       .populate('homeTeam awayTeam')
@@ -3216,14 +3227,16 @@ const getTeamStatsNew = async (req, res) => {
 
       return stats
     }
+    // const teamMatches = matches.filter(
+    //   (match) => {
+    //     return (match.homeTeam._id.toString() === teamId ||
+    //     match.awayTeam._id.toString() === teamId
 
-    const teamMatches = matches.filter(
-      (match) =>
-        match.homeTeam._id.toString() === teamId ||
-        match.awayTeam._id.toString() === teamId
-    )
+    //     )
+    //   }
+    // )
 
-    let filteredMatches = teamMatches
+    let filteredMatches = matches
 
     if (booleanHomeOnly && !booleanAwayOnly) {
       filteredMatches = filteredMatches.filter(
