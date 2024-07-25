@@ -2937,6 +2937,327 @@ const updateMatchById = async (req, res) => {
   }
 }
 
+const getTeamStatsNew = async (req, res) => {
+  const {
+    // ID del equipo para el que se quieren obtener estadísticas
+    season, // Could be a comma-separated string of season IDs
+    statistics, // Expected to be a string with multiple statistics separated by commas
+    matchesCount,
+    homeOnly = 'true',
+    awayOnly = 'true',
+    includeAllSeasonMatches = 'false', // Nuevo parámetro de consulta
+    position = 'false'
+  } = req.query
+  const { teamId } = req.params
+  console.log('position...', position)
+
+  try {
+    const booleanHomeOnly = homeOnly === 'true'
+    const booleanAwayOnly = awayOnly === 'true'
+    const booleanIncludeAllSeasonMatches = includeAllSeasonMatches === 'true'
+    const booleanPosition = position !== 'false'
+
+    const query = {
+      isFinished: true
+    }
+
+    let seasonIds = []
+    if (season) {
+      seasonIds = season.split(',')
+    }
+
+    if (season && !booleanIncludeAllSeasonMatches) {
+      query.seasonYear = { $in: seasonIds }
+    }
+    if (booleanPosition) {
+      query.$and = query.$and || []
+      if (season) {
+        console.log('HOLA')
+        query.$and.push({ seasonYear: season })
+      }
+      const [start, end] = position.split('-').map(Number)
+
+      const zoneId = await getZoneIdByTeam(teamId, season)
+
+      if (zoneId) {
+        await updateZonePositionTablesFromGeneral(season) // Actualizar tablas de posición de zonas
+        const zonePositionTable = await PositionTable.findOne({
+          zone: zoneId
+        }).populate('positions.team')
+        if (!zonePositionTable || !zonePositionTable.positions) {
+          return res.status(404).json({ message: 'Zone Positions not found' })
+        }
+        const teamsInRange = zonePositionTable.positions
+          .filter(
+            (position) => position.puesto >= start && position.puesto <= end
+          )
+          .map((position) => position.team._id.toString())
+
+        query.$and.push({
+          $or: [
+            { homeTeam: teamId, awayTeam: { $in: teamsInRange } },
+            { awayTeam: teamId, homeTeam: { $in: teamsInRange } }
+          ]
+        })
+      } else {
+        await updateSeasonPositionTable(season) // Actualizar tabla de posición general
+        const generalPositionTable = await PositionTable.findOne({
+          season,
+          type: 'general'
+        }).populate('positions.team')
+        console.log('generalPositionTable', generalPositionTable)
+        if (!generalPositionTable || !generalPositionTable.positions) {
+          return res
+            .status(404)
+            .json({ message: 'General Positions not found' })
+        }
+        const teamsInRange = generalPositionTable.positions
+          .filter(
+            (position) => position.puesto >= start && position.puesto <= end
+          )
+          .map((position) => position.team._id.toString())
+
+        query.$and.push({
+          $or: [
+            { homeTeam: teamId, awayTeam: { $in: teamsInRange } },
+            { awayTeam: teamId, homeTeam: { $in: teamsInRange } }
+          ]
+        })
+      }
+    }
+    const matches = await Match.find(query)
+      .sort({ date: -1 })
+      .populate('homeTeam awayTeam')
+      .populate('seasonYear', 'year')
+      .populate({
+        path: 'seasonYear',
+        populate: {
+          path: 'league',
+          model: 'League'
+        }
+      })
+    const determineRanges = ([start, end], step) => {
+      const ranges = {}
+      const precision = step === 1 ? 1 : 2
+
+      for (let i = start; i <= end; i += step) {
+        const rangeKey = i.toFixed(precision).replace('.', '_')
+        ranges[rangeKey] = { count: 0, percentage: 0 }
+      }
+      return ranges
+    }
+
+    const generateStats = (matches, statistics) => {
+      const stats = {
+        matchesTotalFinished: matches?.length || 0
+      }
+
+      if (!statistics || statistics.length === 0) {
+        console.error('No se proporcionaron estadísticas válidas.')
+        return stats
+      }
+
+      statistics.forEach((statistic) => {
+        stats[statistic] = {
+          total: {
+            total: 0,
+            values: [],
+            overRanges: {},
+            underRanges: {}
+          },
+          received: {
+            total: 0,
+            values: [],
+            overRanges: {},
+            underRanges: {}
+          },
+          scored: {
+            total: 0,
+            values: [],
+            overRanges: {},
+            underRanges: {}
+          }
+        }
+
+        switch (statistic) {
+          case 'possession':
+            stats[statistic].received.overRanges = determineRanges([40.5, 99.5], 5)
+            stats[statistic].scored.overRanges = determineRanges([40.5, 99.5], 5)
+            break
+          case 'goals':
+            stats[statistic].received.overRanges = determineRanges([0.5, 6.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([0.5, 6.5], 1)
+            stats[statistic].total.overRanges = determineRanges([2.5, 11.5], 1)
+            break
+          case 'corners':
+            stats[statistic].total.overRanges = determineRanges([10.5, 20.5], 2)
+            stats[statistic].received.overRanges = determineRanges([0.5, 8.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([0.5, 8.5], 1)
+            break
+          case 'offsides':
+            stats[statistic].total.overRanges = determineRanges([0.5, 9.5], 2)
+            stats[statistic].received.overRanges = determineRanges([0.5, 4.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([0.5, 4.5], 1)
+            break
+          case 'yellowCards':
+            stats[statistic].total.overRanges = determineRanges([3.5, 8.5], 1)
+            stats[statistic].received.overRanges = determineRanges([0.5, 5.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([0.5, 5.5], 1)
+            break
+          case 'shots':
+            stats[statistic].total.overRanges = determineRanges([18.5, 30.5], 2)
+            stats[statistic].received.overRanges = determineRanges([7.5, 16.5], 2)
+            stats[statistic].scored.overRanges = determineRanges([7.5, 16.5], 2)
+            break
+          case 'shotsOnTarget':
+            stats[statistic].total.overRanges = determineRanges([5.5, 16.5], 2)
+            stats[statistic].received.overRanges = determineRanges([3.5, 8.5], 1)
+            stats[statistic].scored.overRanges = determineRanges([3.5, 8.5], 1)
+            break
+          default:
+            break
+        }
+
+        ['total', 'received', 'scored'].forEach((type) => {
+          const overRanges = stats[statistic][type].overRanges
+          Object.keys(overRanges).forEach((rangeKey) => {
+            stats[statistic][type].underRanges[rangeKey] = {
+              count: 0,
+              percentage: 0
+            }
+          })
+        })
+      })
+
+      matches.forEach((match) => {
+        const isHomeTeam = match.homeTeam._id.toString() === teamId
+        const teamStats = isHomeTeam
+          ? match.teamStatistics.local
+          : match.teamStatistics.visitor
+        const opponentStats = isHomeTeam
+          ? match.teamStatistics.visitor
+          : match.teamStatistics.local
+
+        statistics.forEach((statistic) => {
+          const statValue = teamStats[statistic]
+          const receivedValue = opponentStats[statistic]
+
+          if (stats[statistic]) {
+            stats[statistic].scored.total += statValue
+            stats[statistic].scored.values.push(statValue)
+            stats[statistic].received.total += receivedValue
+            stats[statistic].received.values.push(receivedValue)
+            stats[statistic].total.total += statValue + receivedValue
+            stats[statistic].total.values.push(receivedValue)
+
+            Object.keys(stats[statistic].total.overRanges).forEach(
+              (rangeKey) => {
+                const range = parseFloat(rangeKey.replace('_', '.'))
+
+                if (stats[statistic].total.overRanges[rangeKey]) {
+                  if (statValue + receivedValue >= range) {
+                    stats[statistic].total.overRanges[rangeKey].count++
+                  } else {
+                    stats[statistic].total.underRanges[rangeKey].count++
+                  }
+                }
+              }
+            )
+            Object.keys(stats[statistic].scored.overRanges).forEach(
+              (rangeKey) => {
+                const range = parseFloat(rangeKey.replace('_', '.'))
+                if (stats[statistic].scored.overRanges[rangeKey]) {
+                  if (statValue >= range) {
+                    stats[statistic].scored.overRanges[rangeKey].count++
+                  } else {
+                    stats[statistic].scored.underRanges[rangeKey].count++
+                  }
+                }
+              }
+            )
+            Object.keys(stats[statistic].received.overRanges).forEach(
+              (rangeKey) => {
+                const range = parseFloat(rangeKey.replace('_', '.'))
+
+                if (stats[statistic].received.overRanges[rangeKey]) {
+                  if (receivedValue >= range) {
+                    stats[statistic].received.overRanges[rangeKey].count++
+                  } else {
+                    stats[statistic].received.underRanges[rangeKey].count++
+                  }
+                }
+              }
+            )
+          } else {
+            console.error(`No se encontró stats[${statistic}]`)
+          }
+        })
+      })
+
+      statistics.forEach((statistic) => {
+        ['total', 'received', 'scored'].forEach((type) => {
+          const totalMatches = stats.matchesTotalFinished
+          const overRanges = stats[statistic][type].overRanges
+          const underRanges = stats[statistic][type].underRanges
+
+          Object.keys(overRanges).forEach((rangeKey) => {
+            if (overRanges[rangeKey]) {
+              const overCount = overRanges[rangeKey].count
+              const underCount = underRanges[rangeKey].count
+
+              overRanges[rangeKey].percentage =
+                ((overCount / totalMatches) * 100).toFixed(2)
+              underRanges[rangeKey].percentage =
+                ((underCount / totalMatches) * 100).toFixed(2)
+            }
+          })
+        })
+      })
+
+      return stats
+    }
+
+    const teamMatches = matches.filter(
+      (match) =>
+        match.homeTeam._id.toString() === teamId ||
+        match.awayTeam._id.toString() === teamId
+    )
+
+    let filteredMatches = teamMatches
+
+    if (booleanHomeOnly && !booleanAwayOnly) {
+      filteredMatches = filteredMatches.filter(
+        (match) => match.homeTeam._id.toString() === teamId
+      )
+    } else if (booleanAwayOnly && !booleanHomeOnly) {
+      filteredMatches = filteredMatches.filter(
+        (match) => match.awayTeam._id.toString() === teamId
+      )
+    }
+
+    console.log('matches', filteredMatches)
+    if (matchesCount && matchesCount > 0) {
+      filteredMatches = filteredMatches.slice(0, matchesCount)
+    }
+
+    const selectedStatistics = statistics ? statistics.split(',') : []
+
+    const teamStats = generateStats(filteredMatches, selectedStatistics)
+    const team = await Team.findById(teamId)
+
+    res.status(200).json([{
+      team,
+      stats: teamStats
+    }])
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({
+      message: 'Error al obtener las estadísticas del equipo.',
+      error
+    })
+  }
+}
+
 export const methods = {
   getAllMatches,
   createMatch,
@@ -2947,5 +3268,6 @@ export const methods = {
   deleteMatchById,
   updateMatchById,
   getTeamStatsForSeason,
-  getAllTeamsStats
+  getAllTeamsStats,
+  getTeamStatsNew
 }

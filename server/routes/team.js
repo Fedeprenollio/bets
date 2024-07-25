@@ -3,6 +3,7 @@ import { Team } from '../../schemas/team.js'
 import { methods as authorization } from '../middleware/authentication.js'
 import { verifyToken } from '../middleware/verifyToken .js'
 import { Season } from '../../schemas/seasonSchema.js'
+import { methods } from '../controllers/match.controller.js'
 
 export const teamRouter = Router()
 
@@ -146,3 +147,5 @@ teamRouter.put('/:id', async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar el equipo' })
   }
 })
+
+teamRouter.get('/stats/:teamId', methods.getTeamStatsNew)
