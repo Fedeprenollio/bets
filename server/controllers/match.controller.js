@@ -3260,7 +3260,8 @@ const getTeamStatsNew = async (req, res) => {
 
     res.status(200).json([{
       team,
-      stats: teamStats
+      stats: teamStats,
+      matches: filteredMatches
     }])
   } catch (error) {
     console.error(error)
