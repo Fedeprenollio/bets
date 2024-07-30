@@ -109,6 +109,7 @@ const calculateStats = (matches, country) => {
     const awayGoals = teamStatistics.visitor.goals
 
     const isPlayoff = isNaN(round)
+    console.log('isPlayoff', isPlayoff)
     // Si es un partido de playoff, salta el procesamiento de este partido
     if (isPlayoff) return
 
@@ -222,10 +223,10 @@ const calculateZoneStats = (allStats, zoneTeams) => {
 }
 
 const getStandingsBySeason = async (req, res) => {
-  console.log('YESSSS')
   try {
     const { seasonId } = req.params
     const allMatches = await Match.find({ seasonYear: seasonId, isFinished: true }).populate('homeTeam').populate('awayTeam')
+    console.log('YESSSS', allMatches)
     const season = await Season.findById(seasonId).populate('zones').populate('league')
     const leagueId = season.league
     const league = await League.findById(leagueId)
@@ -274,7 +275,7 @@ const updateStandingsForSeason = async (req, res) => {
 
   try {
     const allMatches = await Match.find({ seasonYear: seasonId, isFinished: true })
-
+    console.log('allMatches', allMatches)
     const teamStats = {}
 
     allMatches.forEach((match) => {

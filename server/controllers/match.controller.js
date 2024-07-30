@@ -13,6 +13,9 @@ import {
   updateSeasonPositionTable,
   updateZonePositionTablesFromGeneral
 } from '../services/updatePositionTables.js'
+import mongoose from 'mongoose'
+const ObjectId = mongoose.Types.ObjectId
+
 // Controlador para obtener todos los partidos con filtros opcionales
 const getAllMatches = async (req, res) => {
   try {
@@ -2945,6 +2948,7 @@ const getTeamStatsNew = async (req, res) => {
     matchesCount,
     homeOnly = 'true',
     awayOnly = 'true',
+    currentSeason = 'true',
     includeAllSeasonMatches = 'false', // Nuevo parámetro de consulta
     position = 'false'
   } = req.query
@@ -2954,6 +2958,8 @@ const getTeamStatsNew = async (req, res) => {
   try {
     const booleanHomeOnly = homeOnly === 'true'
     const booleanAwayOnly = awayOnly === 'true'
+    const booleanCurrentSeason = currentSeason === 'true'
+
     const booleanIncludeAllSeasonMatches = includeAllSeasonMatches === 'true'
     const booleanPosition = position !== 'false'
 
@@ -2977,67 +2983,167 @@ const getTeamStatsNew = async (req, res) => {
     if (season && !booleanIncludeAllSeasonMatches) {
       query.seasonYear = { $in: seasonIds }
     }
-    if (booleanPosition) {
-      query.$and = query.$and || []
-      if (season) {
-        console.log('HOLA')
-        query.$and.push({ seasonYear: season })
-      }
+    // if (booleanPosition) {
+    //   query.$and = query.$and || []
+    //   if (season) {
+    //     console.log('HOLA')
+    //     query.$and.push({ seasonYear: { $in: seasonIds } })
+    //   }
+    //   const [start, end] = position.split('-').map(Number)
+
+    //   //   const zoneId = await getZoneIdByTeam(teamId, season)
+
+    //   //   if (zoneId) {
+    //   //     await updateZonePositionTablesFromGeneral(season) // Actualizar tablas de posición de zonas
+    //   //     const zonePositionTable = await PositionTable.findOne({
+    //   //       zone: zoneId
+    //   //     }).populate('positions.team')
+    //   //     if (!zonePositionTable || !zonePositionTable.positions) {
+    //   //       return res.status(404).json({ message: 'Zone Positions not found' })
+    //   //     }
+    //   //     const teamsInRange = zonePositionTable.positions
+    //   //       .filter(
+    //   //         (position) => position.puesto >= start && position.puesto <= end
+    //   //       )
+    //   //       .map((position) => position.team._id.toString())
+
+    //   //     query.$and.push({
+    //   //       $or: [
+    //   //         { homeTeam: teamId, awayTeam: { $in: teamsInRange } },
+    //   //         { awayTeam: teamId, homeTeam: { $in: teamsInRange } }
+    //   //       ]
+    //   //     })
+    //   //   } else {
+    //   //     await updateSeasonPositionTable(season) // Actualizar tabla de posición general
+    //   //     const generalPositionTable = await PositionTable.findOne({
+    //   //       season,
+    //   //       type: 'general'
+    //   //     }).populate('positions.team')
+    //   //     if (!generalPositionTable || !generalPositionTable.positions) {
+    //   //       return res
+    //   //         .status(404)
+    //   //         .json({ message: 'General Positions not found' })
+    //   //     }
+    //   //     const teamsInRange = generalPositionTable.positions
+    //   //       .filter(
+    //   //         (position) => position.puesto >= start && position.puesto <= end
+    //   //       )
+    //   //       .map((position) => position.team._id.toString())
+
+    //   //     query.$and.push({
+    //   //       $or: [
+    //   //         { homeTeam: teamId, awayTeam: { $in: teamsInRange } },
+    //   //         { awayTeam: teamId, homeTeam: { $in: teamsInRange } }
+    //   //       ]
+    //   //     })
+    //   //   }
+    //   // }
+
+    //   for (const seasonId of seasonIds) {
+    //     const zoneId = await getZoneIdByTeam(teamId, seasonId)
+
+    //     if (zoneId) {
+    //       await updateZonePositionTablesFromGeneral(seasonId) // Actualizar tablas de posición de zonas
+    //       const zonePositionTable = await PositionTable.findOne({
+    //         zone: zoneId
+    //       }).populate('positions.team')
+    //       if (!zonePositionTable || !zonePositionTable.positions) {
+    //         return res.status(404).json({ message: 'Zone Positions not found' })
+    //       }
+    //       const teamsInRange = zonePositionTable.positions
+    //         .filter(
+    //           (position) => position.puesto >= start && position.puesto <= end
+    //         )
+    //         .map((position) => position.team._id.toString())
+
+    //       query.$and.push({
+    //         $or: [
+    //           { homeTeam: teamId, awayTeam: { $in: teamsInRange } },
+    //           { awayTeam: teamId, homeTeam: { $in: teamsInRange } }
+    //         ]
+    //       })
+    //     } else {
+    //       await updateSeasonPositionTable(seasonId) // Actualizar tabla de posición general
+    //       const generalPositionTable = await PositionTable.findOne({
+    //         season: seasonId,
+    //         type: 'general'
+    //       }).populate('positions.team')
+    //       if (!generalPositionTable || !generalPositionTable.positions) {
+    //         return res
+    //           .status(404)
+    //           .json({ message: 'General Positions not found' })
+    //       }
+    //       const teamsInRange = generalPositionTable.positions
+    //         .filter(
+    //           (position) => position.puesto >= start && position.puesto <= end
+    //         )
+    //         .map((position) => position.team._id.toString())
+
+    //       query.$and.push({
+    //         $or: [
+    //           { homeTeam: teamId, awayTeam: { $in: teamsInRange } },
+    //           { awayTeam: teamId, homeTeam: { $in: teamsInRange } }
+    //         ]
+    //       })
+    //     }
+    //   }
+    // }
+    // Filtrado por posición
+    if (booleanPosition && seasonIds.length === 1) {
       const [start, end] = position.split('-').map(Number)
-
-      const zoneId = await getZoneIdByTeam(teamId, season)
-
+      const seasonId = seasonIds[0]
+      const zoneId = await getZoneIdByTeam(teamId, seasonId)
+      console.log('start, end', start, end)
+      let teamsInRange = []
       if (zoneId) {
-        await updateZonePositionTablesFromGeneral(season) // Actualizar tablas de posición de zonas
-        const zonePositionTable = await PositionTable.findOne({
-          zone: zoneId
-        }).populate('positions.team')
+        await updateZonePositionTablesFromGeneral(seasonId) // Actualizar tablas de posición de zonas
+        const zonePositionTable = await PositionTable.findOne({ zone: zoneId }).populate('positions.team')
         if (!zonePositionTable || !zonePositionTable.positions) {
           return res.status(404).json({ message: 'Zone Positions not found' })
         }
-        const teamsInRange = zonePositionTable.positions
-          .filter(
-            (position) => position.puesto >= start && position.puesto <= end
-          )
-          .map((position) => position.team._id.toString())
-
-        query.$and.push({
-          $or: [
-            { homeTeam: teamId, awayTeam: { $in: teamsInRange } },
-            { awayTeam: teamId, homeTeam: { $in: teamsInRange } }
-          ]
-        })
+        teamsInRange = zonePositionTable.positions
+          .filter(position => position.puesto >= start && position.puesto <= end)
+          .map(position => position.team._id.toString())
       } else {
-        await updateSeasonPositionTable(season) // Actualizar tabla de posición general
-        const generalPositionTable = await PositionTable.findOne({
-          season,
-          type: 'general'
-        }).populate('positions.team')
-        console.log('generalPositionTable', generalPositionTable)
+        await updateSeasonPositionTable(seasonId) // Actualizar tabla de posición general
+        const generalPositionTable = await PositionTable.findOne({ season: seasonId, type: 'general' }).populate('positions.team')
         if (!generalPositionTable || !generalPositionTable.positions) {
-          return res
-            .status(404)
-            .json({ message: 'General Positions not found' })
+          return res.status(404).json({ message: 'General Positions not found' })
         }
-        const teamsInRange = generalPositionTable.positions
-          .filter(
-            (position) => position.puesto >= start && position.puesto <= end
-          )
-          .map((position) => position.team._id.toString())
+        teamsInRange = generalPositionTable.positions
+          .filter(position => position.puesto >= start && position.puesto <= end)
+          .map(position => position.team._id.toString())
 
-        query.$and.push({
-          $or: [
-            { homeTeam: teamId, awayTeam: { $in: teamsInRange } },
-            { awayTeam: teamId, homeTeam: { $in: teamsInRange } }
-          ]
-        })
+        const teamsInRange2 = generalPositionTable.positions
+          .filter(position => position.puesto >= 1 && position.puesto <= 13)
+          .map(position => {
+            console.log('positionn', position)
+            return (
+              {
+                equipo: position.team.name.toString(),
+                puesto: position.team.puesto
+              }
+
+            )
+          })
       }
+      query.$and = query.$and || []
+      query.$and.push({
+        $or: [
+          { homeTeam: teamId, awayTeam: { $in: teamsInRange } },
+          { awayTeam: teamId, homeTeam: { $in: teamsInRange } }
+        ]
+      })
     }
 
     console.log('QUERY', query)
 
     const matches = await Match.find(query)
       .sort({ date: -1 })
+      .populate({
+        path: 'league',
+        select: 'name'
+      })
       .populate('homeTeam awayTeam')
       .populate('seasonYear', 'year')
       .populate({
