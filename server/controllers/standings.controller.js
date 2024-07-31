@@ -99,7 +99,7 @@ const tieBreaker = (teamA, teamB, country, matches) => {
   return 0
 }
 
-const calculateStats = (matches, country) => {
+export const calculateStats = (matches, country) => {
   console.log('matchesSS', matches)
   const teamStatsMap = {}
 
@@ -217,7 +217,7 @@ const calculateStats = (matches, country) => {
   return teamStats
 }
 
-const calculateZoneStats = (allStats, zoneTeams) => {
+export const calculateZoneStats = (allStats, zoneTeams) => {
   // Filtramos las estadísticas generales para incluir solo los equipos de la zona
   return allStats.filter(teamStats => zoneTeams.includes(teamStats.team._id.toString()))
 }

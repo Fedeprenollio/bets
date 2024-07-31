@@ -1,0 +1,11 @@
+### obtener zonas de una season
+GET http://localhost:1234/team/stats/664acbec81ee69cfdd0b0685?&statistics=goals,offsides,yellowCards,corners,shots,shotsOnTarget,possession&matchesCount=20&homeOnly=true&awayOnly=true&includeAllSeasonMatches=false&season=664cbaabfa500cb52f1e1df0&position=1-6
+
+
+### obtener zonas de una season
+GET http://localhost:1234/team/stats/664acbec81ee69cfdd0b0685?&statistics=goals,offsides,yellowCards,corners,shots,shotsOnTarget,possession&matchesCount=20&homeOnly=true&awayOnly=true&includeAllSeasonMatches=false
+
+
+### obtener zonas de una season
+GET http://localhost:1234/team/stats/664acbec81ee69cfdd0b0685?statistics=goals,offsides,yellowCards,corners,shots,shotsOnTarget,possession&matchesCount=0&homeOnly=true&awayOnly=true&includeAllSeasonMatches=false
+

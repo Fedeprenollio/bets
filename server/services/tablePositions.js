@@ -3,6 +3,7 @@ import { PositionTable } from '../../schemas/tablePositionsSchema.js'
 import { Season } from '../../schemas/seasonSchema.js'
 
 export async function calculatePositionTables (seasonId) {
+  console.log('Peru')
   const matches = await Match.find({ seasonYear: seasonId, isFinished: true })
 
   const positionData = {

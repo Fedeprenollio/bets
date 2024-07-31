@@ -16,7 +16,3 @@ matchRouter.get('/team-stats/:seasonId', matchController.getTeamStatsForSeason)
 
 matchRouter.delete('/:id', matchController.deleteMatchById)
 matchRouter.put('/:id', verifyToken, matchController.updateMatchById)
-
-// Rutas para obtener estadísticas por temporada o zona
-// matchRouter.get('/statsAc/seasons/:contextId', (req, res) => matchController.getTeamStats({ ...req, params: { ...req.params, contextType: 'season' } }, res))
-// matchRouter.get('/statsAc/zones/:contextId', (req, res) => matchController.getTeamStats({ ...req, params: { ...req.params, contextType: 'zone' } }, res))

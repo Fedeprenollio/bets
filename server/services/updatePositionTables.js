@@ -41,6 +41,7 @@ function updateTeamData (teamData, teamStats, opponentStats) {
 
 // Guardar o actualizar la tabla de posiciones
 async function saveOrUpdatePositionTable (seasonId, type, positionData) {
+  console.log('CACA')
   const query = { season: seasonId, type }
 
   const existingTable = await PositionTable.findOne(query)
@@ -109,7 +110,6 @@ export const updateSeasonPositionTable = async (seasonId) => {
 
 // Actualiza la tabla de posiciones de las zonas a partir de la tabla general
 export const updateZonePositionTablesFromGeneral = async (seasonId) => {
-  console.log('seasonId2', seasonId)
   const season = await Season.findById(seasonId).populate('zones')
   if (!season) {
     throw new Error(`Season with ID ${seasonId} not found`)
@@ -119,7 +119,7 @@ export const updateZonePositionTablesFromGeneral = async (seasonId) => {
   if (!generalTable) {
     throw new Error(`General position table for season ${seasonId} not found`)
   }
-
+  console.log('generalTable', generalTable)
   const zoneTables = []
 
   for (const zone of season.zones) {
@@ -143,7 +143,7 @@ export const updateZonePositionTablesFromGeneral = async (seasonId) => {
     })
 
     let zoneTable = await PositionTable.findOne({ season: seasonId, zone: zone._id, type: 'general' })
-
+    console.log('zoneTable...', zoneTable)
     if (zoneTable) {
       zoneTable.positions = zonePositions
       await zoneTable.save()
