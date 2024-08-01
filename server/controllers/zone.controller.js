@@ -99,12 +99,12 @@ export const updateZoneInSeason = async (req, res) => {
 export const deleteZoneFromSeason = async (req, res) => {
   try {
     const { seasonId, zoneId } = req.params
+    console.log('zoneId', zoneId)
+    // const season = await Season.findById(seasonId)
 
-    const season = await Season.findById(seasonId)
-
-    if (!season) {
-      return res.status(404).json({ message: 'Season not found' })
-    }
+    // if (!season) {
+    //   return res.status(404).json({ message: 'Season not found' })
+    // }
 
     const zone = await Zone.findById(zoneId)
 
@@ -112,8 +112,8 @@ export const deleteZoneFromSeason = async (req, res) => {
       return res.status(404).json({ message: 'Zone not found' })
     }
 
-    await zone.remove()
-    await season.save()
+    await zone.deleteOne({ _id: zoneId })
+    // await season.save()
 
     res.status(200).json({ message: 'Zone deleted successfully' })
   } catch (error) {
