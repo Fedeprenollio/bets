@@ -1839,7 +1839,7 @@ const getAllTeamsStats = async (req, res) => {
     return res.status(200).json(allStats)
   } catch (error) {
     console.error('Error fetching matches:', error)
-    res.status(500).send('An error occurred while fetching matches')
+    res.status(500).send('An error occurred while fetching matches0000')
   }
 }
 
@@ -1864,7 +1864,7 @@ const getZoneIdByTeam = async (idTeam, seasonId) => {
 
 const getTeamStatsForSeason = async (req, res) => {
   const { seasonId } = req.params
-  const { matchType = 'both' } = req.query // Obtener el tipo de partido de los parámetros de consulta
+  const { matchType = 'both', teamId } = req.query // Obtener el tipo de partido de los parámetros de consulta
 
   try {
     // Construir el filtro base para la consulta de partidos
@@ -1873,6 +1873,13 @@ const getTeamStatsForSeason = async (req, res) => {
       isFinished: true
     }
 
+    // Si se proporciona un ID de equipo, filtrar los partidos en los que participe el equipo
+    if (teamId) {
+      matchFilter.$or = [
+        { 'homeTeam._id': teamId },
+        { 'awayTeam._id': teamId }
+      ]
+    }
     // Buscar todos los partidos de la temporada especificada que estén finalizados
     const matches = await Match.find(matchFilter).populate('homeTeam awayTeam')
 
@@ -2138,239 +2145,6 @@ const getTeamStatsForSeason = async (req, res) => {
     })
   }
 }
-
-// const getTeamStatsForSeason = async (req, res) => {
-//   const { seasonId } = req.params
-//   try {
-//     // Buscar todos los partidos de la temporada especificada que estén finalizados
-//     const matches = await Match.find({
-//       seasonYear: seasonId,
-//       isFinished: true
-//     }).populate('homeTeam awayTeam')
-
-//     // Objeto para almacenar las estadísticas de cada equipo
-//     const teamStats = {}
-
-//     // Función auxiliar para inicializar las estadísticas de un equipo
-//     const initializeTeamStats = (teamName) => ({
-//       team: teamName,
-//       statistics: {
-//         goals: { values: [], total: 0 },
-//         offsides: { values: [], total: 0 },
-//         yellowCards: { values: [], total: 0 },
-//         redCards: { values: [], total: 0 },
-//         corners: { values: [], total: 0 },
-//         shots: { values: [], total: 0 },
-//         shotsOnTarget: { values: [], total: 0 },
-//         possession: { values: [], total: 0 },
-//         fouls: { values: [], total: 0 }
-//       },
-//       received: {
-//         goals: { values: [], total: 0 },
-//         offsides: { values: [], total: 0 },
-//         yellowCards: { values: [], total: 0 },
-//         redCards: { values: [], total: 0 },
-//         corners: { values: [], total: 0 },
-//         shots: { values: [], total: 0 },
-//         shotsOnTarget: { values: [], total: 0 },
-//         possession: { values: [], total: 0 },
-//         fouls: { values: [], total: 0 }
-//       }
-//     })
-
-//     // Iterar sobre cada partido y acumular las estadísticas
-//     matches.forEach((match) => {
-//       // Acumular estadísticas del equipo local
-//       const homeTeamId = match.homeTeam._id
-//       const homeTeamName = match.homeTeam.name
-//       if (!teamStats[homeTeamId]) {
-//         teamStats[homeTeamId] = initializeTeamStats(homeTeamName)
-//       }
-//       const {
-//         goals: localGoals,
-//         offsides: localOffsides,
-//         yellowCards: localYellowCards,
-//         redCards: localRedCards,
-//         corners: localCorners,
-//         shots: localShots,
-//         shotsOnTarget: localShotsOnTarget,
-//         possession: localPossession,
-//         foults: localFouls
-//       } = match.teamStatistics.local
-//       teamStats[homeTeamId].statistics.goals.values.push(localGoals || 0)
-//       teamStats[homeTeamId].statistics.goals.total += localGoals || 0
-//       teamStats[homeTeamId].statistics.offsides.values.push(localOffsides || 0)
-//       teamStats[homeTeamId].statistics.offsides.total += localOffsides || 0
-//       teamStats[homeTeamId].statistics.yellowCards.values.push(
-//         localYellowCards || 0
-//       )
-//       teamStats[homeTeamId].statistics.yellowCards.total +=
-//         localYellowCards || 0
-//       teamStats[homeTeamId].statistics.redCards.values.push(localRedCards || 0)
-//       teamStats[homeTeamId].statistics.redCards.total += localRedCards || 0
-//       teamStats[homeTeamId].statistics.corners.values.push(localCorners || 0)
-//       teamStats[homeTeamId].statistics.corners.total += localCorners || 0
-//       teamStats[homeTeamId].statistics.shots.values.push(localShots || 0)
-//       teamStats[homeTeamId].statistics.shots.total += localShots || 0
-//       teamStats[homeTeamId].statistics.shotsOnTarget.values.push(
-//         localShotsOnTarget || 0
-//       )
-//       teamStats[homeTeamId].statistics.shotsOnTarget.total +=
-//         localShotsOnTarget || 0
-//       teamStats[homeTeamId].statistics.possession.values.push(
-//         localPossession || 0
-//       )
-//       teamStats[homeTeamId].statistics.possession.total += localPossession || 0
-//       teamStats[homeTeamId].statistics.fouls.values.push(localFouls || 0)
-//       teamStats[homeTeamId].statistics.fouls.total += localFouls || 0
-
-//       // Acumular estadísticas recibidas del equipo local
-//       const {
-//         goals: visitorGoals,
-//         offsides: visitorOffsides,
-//         yellowCards: visitorYellowCards,
-//         redCards: visitorRedCards,
-//         corners: visitorCorners,
-//         shots: visitorShots,
-//         shotsOnTarget: visitorShotsOnTarget,
-//         possession: visitorPossession,
-//         foults: visitorFouls
-//       } = match.teamStatistics.visitor
-//       teamStats[homeTeamId].received.goals.values.push(visitorGoals || 0)
-//       teamStats[homeTeamId].received.goals.total += visitorGoals || 0
-//       teamStats[homeTeamId].received.offsides.values.push(visitorOffsides || 0)
-//       teamStats[homeTeamId].received.offsides.total += visitorOffsides || 0
-//       teamStats[homeTeamId].received.yellowCards.values.push(
-//         visitorYellowCards || 0
-//       )
-//       teamStats[homeTeamId].received.yellowCards.total +=
-//         visitorYellowCards || 0
-//       teamStats[homeTeamId].received.redCards.values.push(visitorRedCards || 0)
-//       teamStats[homeTeamId].received.redCards.total += visitorRedCards || 0
-//       teamStats[homeTeamId].received.corners.values.push(visitorCorners || 0)
-//       teamStats[homeTeamId].received.corners.total += visitorCorners || 0
-//       teamStats[homeTeamId].received.shots.values.push(visitorShots || 0)
-//       teamStats[homeTeamId].received.shots.total += visitorShots || 0
-//       teamStats[homeTeamId].received.shotsOnTarget.values.push(
-//         visitorShotsOnTarget || 0
-//       )
-//       teamStats[homeTeamId].received.shotsOnTarget.total +=
-//         visitorShotsOnTarget || 0
-//       teamStats[homeTeamId].received.possession.values.push(
-//         visitorPossession || 0
-//       )
-//       teamStats[homeTeamId].received.possession.total += visitorPossession || 0
-//       teamStats[homeTeamId].received.fouls.values.push(visitorFouls || 0)
-//       teamStats[homeTeamId].received.fouls.total += visitorFouls || 0
-
-//       // Acumular estadísticas del equipo visitante
-//       const awayTeamId = match.awayTeam._id
-//       const awayTeamName = match.awayTeam.name
-//       if (!teamStats[awayTeamId]) {
-//         teamStats[awayTeamId] = initializeTeamStats(awayTeamName)
-//       }
-//       teamStats[awayTeamId].statistics.goals.values.push(visitorGoals || 0)
-//       teamStats[awayTeamId].statistics.goals.total += visitorGoals || 0
-//       teamStats[awayTeamId].statistics.offsides.values.push(
-//         visitorOffsides || 0
-//       )
-//       teamStats[awayTeamId].statistics.offsides.total += visitorOffsides || 0
-//       teamStats[awayTeamId].statistics.yellowCards.values.push(
-//         visitorYellowCards || 0
-//       )
-//       teamStats[awayTeamId].statistics.yellowCards.total +=
-//         visitorYellowCards || 0
-//       teamStats[awayTeamId].statistics.redCards.values.push(
-//         visitorRedCards || 0
-//       )
-//       teamStats[awayTeamId].statistics.redCards.total += visitorRedCards || 0
-//       teamStats[awayTeamId].statistics.corners.values.push(visitorCorners || 0)
-//       teamStats[awayTeamId].statistics.corners.total += visitorCorners || 0
-//       teamStats[awayTeamId].statistics.shots.values.push(visitorShots || 0)
-//       teamStats[awayTeamId].statistics.shots.total += visitorShots || 0
-//       teamStats[awayTeamId].statistics.shotsOnTarget.values.push(
-//         visitorShotsOnTarget || 0
-//       )
-//       teamStats[awayTeamId].statistics.shotsOnTarget.total +=
-//         visitorShotsOnTarget || 0
-//       teamStats[awayTeamId].statistics.possession.values.push(
-//         visitorPossession || 0
-//       )
-//       teamStats[awayTeamId].statistics.possession.total +=
-//         visitorPossession || 0
-//       teamStats[awayTeamId].statistics.fouls.values.push(visitorFouls || 0)
-//       teamStats[awayTeamId].statistics.fouls.total += visitorFouls || 0
-
-//       // Acumular estadísticas recibidas del equipo visitante
-//       teamStats[awayTeamId].received.goals.values.push(localGoals || 0)
-//       teamStats[awayTeamId].received.goals.total += localGoals || 0
-//       teamStats[awayTeamId].received.offsides.values.push(localOffsides || 0)
-//       teamStats[awayTeamId].received.offsides.total += localOffsides || 0
-//       teamStats[awayTeamId].received.yellowCards.values.push(
-//         localYellowCards || 0
-//       )
-//       teamStats[awayTeamId].received.yellowCards.total += localYellowCards || 0
-//       teamStats[awayTeamId].received.redCards.values.push(localRedCards || 0)
-//       teamStats[awayTeamId].received.redCards.total += localRedCards || 0
-//       teamStats[awayTeamId].received.corners.values.push(localCorners || 0)
-//       teamStats[awayTeamId].received.corners.total += localCorners || 0
-//       teamStats[awayTeamId].received.shots.values.push(localShots || 0)
-//       teamStats[awayTeamId].received.shots.total += localShots || 0
-//       teamStats[awayTeamId].received.shotsOnTarget.values.push(
-//         localShotsOnTarget || 0
-//       )
-//       teamStats[awayTeamId].received.shotsOnTarget.total +=
-//         localShotsOnTarget || 0
-//       teamStats[awayTeamId].received.possession.values.push(
-//         localPossession || 0
-//       )
-//       teamStats[awayTeamId].received.possession.total += localPossession || 0
-//       teamStats[awayTeamId].received.fouls.values.push(localFouls || 0)
-//       teamStats[awayTeamId].received.fouls.total += localFouls || 0
-//     })
-
-//     // Función para calcular la mediana, el promedio y la desviación estándar usando simple-statistics
-//     const calculateStats = (values) => {
-//       if (values.length === 0) {
-//         return { promedio: 0, mediana: 0, desviacion: 0 }
-//       }
-
-//       const promedio = parseFloat(ss.mean(values).toFixed(1))
-//       const mediana = parseFloat(ss.median(values).toFixed(1))
-//       const desviacion = parseFloat(ss.standardDeviation(values).toFixed(1))
-
-//       return { promedio, mediana, desviacion }
-//     }
-//     // Añadir estadísticas calculadas a cada equipo
-//     Object.values(teamStats).forEach((team) => {
-//       Object.keys(team.statistics).forEach((statKey) => {
-//         team.statistics[statKey] = {
-//           ...team.statistics[statKey],
-//           ...calculateStats(team.statistics[statKey].values)
-//         }
-//         team.received[statKey] = {
-//           ...team.received[statKey],
-//           ...calculateStats(team.received[statKey].values)
-//         }
-//       })
-//     })
-
-//     // Convertir el objeto de estadísticas de equipos a un array de objetos
-//     const teamStatsArray = Object.keys(teamStats).map((teamId) => ({
-//       teamId,
-//       teamName: teamStats[teamId].team,
-//       statistics: teamStats[teamId].statistics,
-//       received: teamStats[teamId].received
-//     }))
-
-//     res.json(teamStatsArray)
-//   } catch (error) {
-//     console.error('Error fetching team statistics for season:', error)
-//     res.status(500).json({
-//       error: 'An error occurred while fetching team statistics for season'
-//     })
-//   }
-// }
 
 // Controlador para eliminar un partido por su ID
 const deleteMatchById = async (req, res) => {
@@ -2866,7 +2640,6 @@ const getTeamStatsNew = async (req, res) => {
       )
     }
 
-    console.log('matches', filteredMatches)
     if (matchesCount && matchesCount > 0) {
       filteredMatches = filteredMatches.slice(0, matchesCount)
     }
@@ -2892,6 +2665,402 @@ const getTeamStatsNew = async (req, res) => {
   }
 }
 
+// const getTeamStatsForTwoTeam = async (req, res) => {
+//   const { seasonId } = req.params
+//   const teamFilters = req.body // teamFilters será un array con objetos de filtros para cada equipo
+//   console.log('teamFilters', teamFilters)
+//   try {
+//     const matchFilter = {
+//       seasonYear: seasonId,
+//       isFinished: true
+//     }
+
+//     const matches = await Match.find(matchFilter).populate('homeTeam awayTeam')
+
+//     const teamStats = []
+
+//     const initializeTeamStats = (teamName) => ({
+//       teamId: teamName,
+//       statistics: {
+//         goals: { values: [], total: 0 },
+//         offsides: { values: [], total: 0 },
+//         yellowCards: { values: [], total: 0 },
+//         redCards: { values: [], total: 0 },
+//         corners: { values: [], total: 0 },
+//         shots: { values: [], total: 0 },
+//         shotsOnTarget: { values: [], total: 0 },
+//         possession: { values: [], total: 0 },
+//         fouls: { values: [], total: 0 }
+//       },
+//       received: {
+//         goals: { values: [], total: 0 },
+//         offsides: { values: [], total: 0 },
+//         yellowCards: { values: [], total: 0 },
+//         redCards: { values: [], total: 0 },
+//         corners: { values: [], total: 0 },
+//         shots: { values: [], total: 0 },
+//         shotsOnTarget: { values: [], total: 0 },
+//         possession: { values: [], total: 0 },
+//         fouls: { values: [], total: 0 }
+//       }
+//     })
+
+//     // const calculateStats = (teamId, teamName, teamFilter, match, home) => {
+//     //   if (!teamStats[teamId]) {
+//     //     teamStats[teamId] = initializeTeamStats(teamName)
+//     //   }
+
+//     //   const stats = home ? match.teamStatistics.local : match.teamStatistics.visitor
+//     //   const receivedStats = home ? match.teamStatistics.visitor : match.teamStatistics.local
+
+//     //   const { matchType = 'both', matchesCount, positions } = teamFilter
+
+//     //   if (matchType === 'home' && !home) return
+//     //   if (matchType === 'away' && home) return
+
+//     //   const {
+//     //     goals,
+//     //     offsides,
+//     //     yellowCards,
+//     //     redCards,
+//     //     corners,
+//     //     shots,
+//     //     shotsOnTarget,
+//     //     possession,
+//     //     foults: fouls
+//     //   } = stats
+
+//     //   teamStats[teamId].statistics.goals.values.push(goals || 0)
+//     //   teamStats[teamId].statistics.goals.total += goals || 0
+//     //   teamStats[teamId].statistics.offsides.values.push(offsides || 0)
+//     //   teamStats[teamId].statistics.offsides.total += offsides || 0
+//     //   teamStats[teamId].statistics.yellowCards.values.push(yellowCards || 0)
+//     //   teamStats[teamId].statistics.yellowCards.total += yellowCards || 0
+//     //   teamStats[teamId].statistics.redCards.values.push(redCards || 0)
+//     //   teamStats[teamId].statistics.redCards.total += redCards || 0
+//     //   teamStats[teamId].statistics.corners.values.push(corners || 0)
+//     //   teamStats[teamId].statistics.corners.total += corners || 0
+//     //   teamStats[teamId].statistics.shots.values.push(shots || 0)
+//     //   teamStats[teamId].statistics.shots.total += shots || 0
+//     //   teamStats[teamId].statistics.shotsOnTarget.values.push(shotsOnTarget || 0)
+//     //   teamStats[teamId].statistics.shotsOnTarget.total += shotsOnTarget || 0
+//     //   teamStats[teamId].statistics.possession.values.push(possession || 0)
+//     //   teamStats[teamId].statistics.possession.total += possession || 0
+//     //   teamStats[teamId].statistics.fouls.values.push(fouls || 0)
+//     //   teamStats[teamId].statistics.fouls.total += fouls || 0
+
+//     //   const {
+//     //     goals: recGoals,
+//     //     offsides: recOffsides,
+//     //     yellowCards: recYellowCards,
+//     //     redCards: recRedCards,
+//     //     corners: recCorners,
+//     //     shots: recShots,
+//     //     shotsOnTarget: recShotsOnTarget,
+//     //     possession: recPossession,
+//     //     foults: recFouls
+//     //   } = receivedStats
+
+//     //   teamStats[teamId].received.goals.values.push(recGoals || 0)
+//     //   teamStats[teamId].received.goals.total += recGoals || 0
+//     //   teamStats[teamId].received.offsides.values.push(recOffsides || 0)
+//     //   teamStats[teamId].received.offsides.total += recOffsides || 0
+//     //   teamStats[teamId].received.yellowCards.values.push(recYellowCards || 0)
+//     //   teamStats[teamId].received.yellowCards.total += recYellowCards || 0
+//     //   teamStats[teamId].received.redCards.values.push(recRedCards || 0)
+//     //   teamStats[teamId].received.redCards.total += recRedCards || 0
+//     //   teamStats[teamId].received.corners.values.push(recCorners || 0)
+//     //   teamStats[teamId].received.corners.total += recCorners || 0
+//     //   teamStats[teamId].received.shots.values.push(recShots || 0)
+//     //   teamStats[teamId].received.shots.total += recShots || 0
+//     //   teamStats[teamId].received.shotsOnTarget.values.push(recShotsOnTarget || 0)
+//     //   teamStats[teamId].received.shotsOnTarget.total += recShotsOnTarget || 0
+//     //   teamStats[teamId].received.possession.values.push(recPossession || 0)
+//     //   teamStats[teamId].received.possession.total += recPossession || 0
+//     //   teamStats[teamId].received.fouls.values.push(recFouls || 0)
+//     //   teamStats[teamId].received.fouls.total += recFouls || 0
+//     // }
+
+//     const calculateStats = (teamId, teamName, teamFilter, match, home) => {
+//       console.log('Calculating stats for team:', teamId, teamName)
+//       let teamStat = teamStats.find((team) => team.teamId === teamId)
+//       if (!teamStat) {
+//         teamStat = initializeTeamStats(teamId, teamName)
+//         teamStats.push(teamStat)
+//       }
+
+//       const stats = home ? match.teamStatistics.local : match.teamStatistics.visitor
+//       const receivedStats = home ? match.teamStatistics.visitor : match.teamStatistics.local
+
+//       const { matchType = 'both', matchesCount, positions } = teamFilter
+
+//       if (matchType === 'home' && !home) return
+//       if (matchType === 'away' && home) return
+
+//       const {
+//         goals,
+//         offsides,
+//         yellowCards,
+//         redCards,
+//         corners,
+//         shots,
+//         shotsOnTarget,
+//         possession,
+//         fouls
+//       } = stats
+
+//       teamStat.statistics.goals.values.push(goals || 0)
+//       teamStat.statistics.goals.total += goals || 0
+//       teamStat.statistics.offsides.values.push(offsides || 0)
+//       teamStat.statistics.offsides.total += offsides || 0
+//       teamStat.statistics.yellowCards.values.push(yellowCards || 0)
+//       teamStat.statistics.yellowCards.total += yellowCards || 0
+//       teamStat.statistics.redCards.values.push(redCards || 0)
+//       teamStat.statistics.redCards.total += redCards || 0
+//       teamStat.statistics.corners.values.push(corners || 0)
+//       teamStat.statistics.corners.total += corners || 0
+//       teamStat.statistics.shots.values.push(shots || 0)
+//       teamStat.statistics.shots.total += shots || 0
+//       teamStat.statistics.shotsOnTarget.values.push(shotsOnTarget || 0)
+//       teamStat.statistics.shotsOnTarget.total += shotsOnTarget || 0
+//       teamStat.statistics.possession.values.push(possession || 0)
+//       teamStat.statistics.possession.total += possession || 0
+//       teamStat.statistics.fouls.values.push(fouls || 0)
+//       teamStat.statistics.fouls.total += fouls || 0
+
+//       const {
+//         goals: recGoals,
+//         offsides: recOffsides,
+//         yellowCards: recYellowCards,
+//         redCards: recRedCards,
+//         corners: recCorners,
+//         shots: recShots,
+//         shotsOnTarget: recShotsOnTarget,
+//         possession: recPossession,
+//         fouls: recFouls
+//       } = receivedStats
+
+//       teamStat.received.goals.values.push(recGoals || 0)
+//       teamStat.received.goals.total += recGoals || 0
+//       teamStat.received.offsides.values.push(recOffsides || 0)
+//       teamStat.received.offsides.total += recOffsides || 0
+//       teamStat.received.yellowCards.values.push(recYellowCards || 0)
+//       teamStat.received.yellowCards.total += recYellowCards || 0
+//       teamStat.received.redCards.values.push(recRedCards || 0)
+//       teamStat.received.redCards.total += recRedCards || 0
+//       teamStat.received.corners.values.push(recCorners || 0)
+//       teamStat.received.corners.total += recCorners || 0
+//       teamStat.received.shots.values.push(recShots || 0)
+//       teamStat.received.shots.total += recShots || 0
+//       teamStat.received.shotsOnTarget.values.push(recShotsOnTarget || 0)
+//       teamStat.received.shotsOnTarget.total += recShotsOnTarget || 0
+//       teamStat.received.possession.values.push(recPossession || 0)
+//       teamStat.received.possession.total += recPossession || 0
+//       teamStat.received.fouls.values.push(recFouls || 0)
+//       teamStat.received.fouls.total += recFouls || 0
+//     }
+
+//     matches.forEach((match) => {
+//       teamFilters.forEach((filter) => {
+//         const { teamId, teamName, matchType = 'both' } = filter
+//         // console.log('teamId, teamName0', teamId, teamName)
+//         if (matchType === 'home' || matchType === 'both') {
+//           if (match.homeTeam._id.toString() === teamId) {
+//             calculateStats(teamId, teamName, filter, match, true)
+//           }
+//         }
+
+//         if (matchType === 'away' || matchType === 'both') {
+//           if (match.awayTeam._id.toString() === teamId) {
+//             calculateStats(teamId, teamName, filter, match, false)
+//           }
+//         }
+//       })
+//     })
+//     console.log('teamStats:', JSON.stringify(teamStats, null, 2))
+//     res.json(teamStats)
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error al obtener las estadísticas del equipo', error })
+//   }
+// }
+const getTeamStatsForTwoTeam = async (req, res) => {
+  const { seasonId } = req.params
+  const teamFilters = req.body // teamFilters será un array con objetos de filtros para cada equipo
+  console.log('teamFilters:', teamFilters)
+
+  try {
+    const matchFilter = {
+      seasonYear: seasonId,
+      isFinished: true
+    }
+
+    const matches = await Match.find(matchFilter).populate('homeTeam awayTeam')
+
+    const teamStats = []
+
+    const initializeTeamStats = (teamId, teamName) => ({
+      teamId,
+      teamName,
+      statistics: {
+        goals: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        offsides: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        yellowCards: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        redCards: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        corners: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        shots: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        shotsOnTarget: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        possession: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        fouls: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 }
+      },
+      received: {
+        goals: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        offsides: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        yellowCards: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        redCards: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        corners: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        shots: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        shotsOnTarget: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        possession: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
+        fouls: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 }
+      }
+    })
+
+    const calculateStats = (values) => {
+      if (values.length === 0) {
+        return { promedio: 0, mediana: 0, desviacion: 0 }
+      }
+
+      const promedio = parseFloat(ss.mean(values).toFixed(1))
+      const mediana = parseFloat(ss.median(values).toFixed(1))
+      const desviacion = parseFloat(ss.standardDeviation(values).toFixed(1))
+
+      return { promedio, mediana, desviacion }
+    }
+
+    const finalizeStats = (teamStats) => {
+      Object.keys(teamStats.statistics).forEach((statKey) => {
+        const stat = teamStats.statistics[statKey]
+        const calculated = calculateStats(stat.values)
+        stat.promedio = calculated.promedio
+        stat.mediana = calculated.mediana
+        stat.desviacion = calculated.desviacion
+      })
+
+      Object.keys(teamStats.received).forEach((statKey) => {
+        const stat = teamStats.received[statKey]
+        const calculated = calculateStats(stat.values)
+        stat.promedio = calculated.promedio
+        stat.mediana = calculated.mediana
+        stat.desviacion = calculated.desviacion
+      })
+    }
+
+    const calculateStatsForMatch = (teamId, teamName, teamFilter, match, home, teamStats) => {
+      let teamStat = teamStats.find((team) => team.teamId === teamId)
+      if (!teamStat) {
+        teamStat = initializeTeamStats(teamId, teamName)
+        teamStats.push(teamStat)
+      }
+
+      const stats = home ? match.teamStatistics.local : match.teamStatistics.visitor
+      const receivedStats = home ? match.teamStatistics.visitor : match.teamStatistics.local
+
+      const { matchType = 'both' } = teamFilter
+
+      if (matchType === 'home' && !home) return
+      if (matchType === 'away' && home) return
+
+      const {
+        goals,
+        offsides,
+        yellowCards,
+        redCards,
+        corners,
+        shots,
+        shotsOnTarget,
+        possession,
+        fouls
+      } = stats
+
+      teamStat.statistics.goals.values.push(goals || 0)
+      teamStat.statistics.goals.total += goals || 0
+      teamStat.statistics.offsides.values.push(offsides || 0)
+      teamStat.statistics.offsides.total += offsides || 0
+      teamStat.statistics.yellowCards.values.push(yellowCards || 0)
+      teamStat.statistics.yellowCards.total += yellowCards || 0
+      teamStat.statistics.redCards.values.push(redCards || 0)
+      teamStat.statistics.redCards.total += redCards || 0
+      teamStat.statistics.corners.values.push(corners || 0)
+      teamStat.statistics.corners.total += corners || 0
+      teamStat.statistics.shots.values.push(shots || 0)
+      teamStat.statistics.shots.total += shots || 0
+      teamStat.statistics.shotsOnTarget.values.push(shotsOnTarget || 0)
+      teamStat.statistics.shotsOnTarget.total += shotsOnTarget || 0
+      teamStat.statistics.possession.values.push(possession || 0)
+      teamStat.statistics.possession.total += possession || 0
+      teamStat.statistics.fouls.values.push(fouls || 0)
+      teamStat.statistics.fouls.total += fouls || 0
+
+      const {
+        goals: recGoals,
+        offsides: recOffsides,
+        yellowCards: recYellowCards,
+        redCards: recRedCards,
+        corners: recCorners,
+        shots: recShots,
+        shotsOnTarget: recShotsOnTarget,
+        possession: recPossession,
+        fouls: recFouls
+      } = receivedStats
+
+      teamStat.received.goals.values.push(recGoals || 0)
+      teamStat.received.goals.total += recGoals || 0
+      teamStat.received.offsides.values.push(recOffsides || 0)
+      teamStat.received.offsides.total += recOffsides || 0
+      teamStat.received.yellowCards.values.push(recYellowCards || 0)
+      teamStat.received.yellowCards.total += recYellowCards || 0
+      teamStat.received.redCards.values.push(recRedCards || 0)
+      teamStat.received.redCards.total += recRedCards || 0
+      teamStat.received.corners.values.push(recCorners || 0)
+      teamStat.received.corners.total += recCorners || 0
+      teamStat.received.shots.values.push(recShots || 0)
+      teamStat.received.shots.total += recShots || 0
+      teamStat.received.shotsOnTarget.values.push(recShotsOnTarget || 0)
+      teamStat.received.shotsOnTarget.total += recShotsOnTarget || 0
+      teamStat.received.possession.values.push(recPossession || 0)
+      teamStat.received.possession.total += recPossession || 0
+      teamStat.received.fouls.values.push(recFouls || 0)
+      teamStat.received.fouls.total += recFouls || 0
+    }
+
+    matches.forEach((match) => {
+      teamFilters.forEach((filter) => {
+        const { teamId, matchType = 'both' } = filter
+        const homeTeamName = match.homeTeam.name
+        const awayTeamName = match.awayTeam.name
+
+        if (matchType === 'home' || matchType === 'both') {
+          if (match.homeTeam._id.toString() === teamId) {
+            calculateStatsForMatch(teamId, homeTeamName, filter, match, true, teamStats)
+          }
+        }
+
+        if (matchType === 'away' || matchType === 'both') {
+          if (match.awayTeam._id.toString() === teamId) {
+            calculateStatsForMatch(teamId, awayTeamName, filter, match, false, teamStats)
+          }
+        }
+      })
+    })
+
+    teamStats.forEach(finalizeStats)
+    console.log('teamStats', teamStats)
+    res.json(teamStats)
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener las estadísticas del equipo', error })
+  }
+}
+
 export const methods = {
   getAllMatches,
   createMatch,
@@ -2902,6 +3071,7 @@ export const methods = {
   deleteMatchById,
   updateMatchById,
   getTeamStatsForSeason,
+  getTeamStatsForTwoTeam,
   getAllTeamsStats,
   getTeamStatsNew
 }
