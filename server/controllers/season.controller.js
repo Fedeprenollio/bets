@@ -189,6 +189,7 @@ const deleteSeasonById = async (req, res) => {
 const getSeasonsByLeagueId = async (req, res) => {
   try {
     const { leagueId } = req.params
+    console.log('leagueId', leagueId)
     const seasons = await Season.find({ league: leagueId })
     const currentSeason = await Season.findOne({
       league: leagueId,
