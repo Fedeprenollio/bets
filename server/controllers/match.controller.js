@@ -2346,7 +2346,6 @@ const getTeamStatsNew = async (req, res) => {
         // teamsInRange = zonePositionTable?.positions?.filter(position => position.puesto >= start && position.puesto <= end)
         //   .map(position => position.team._id.toString())
       } else {
-        console.log('populatedStandings', populatedStandings)
         teamsInRange = getTeamsInRangeFromSingleTable(allStats, start, end)
       }
       query.$and = query.$and || []
