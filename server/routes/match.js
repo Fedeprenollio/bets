@@ -13,7 +13,7 @@ matchRouter.put('/:id/result', verifyToken, matchController.updateMatchResult)
 matchRouter.get('/:id', matchController.getMatchById)
 
 matchRouter.get('/team-stats/:seasonId', matchController.getTeamStatsForSeason)
-matchRouter.post('/two-team-stats/:seasonId', matchController.getTeamStatsForTwoTeam)
+// matchRouter.post('/two-team-stats/:seasonId', matchController.getTeamStatsForTwoTeam)
 
 matchRouter.delete('/:id', matchController.deleteMatchById)
 matchRouter.put('/:id', verifyToken, matchController.updateMatchById)

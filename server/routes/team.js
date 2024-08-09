@@ -149,3 +149,4 @@ teamRouter.put('/:id', async (req, res) => {
 })
 
 teamRouter.get('/stats/:teamId', methods.getTeamStatsNew)
+teamRouter.get('/more-stats/:teamId', methods.getTeamStatsForSingleTeam)
