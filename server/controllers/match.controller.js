@@ -2149,7 +2149,6 @@ const getZoneIdByTeam = async (idTeam, seasonId) => {
 const getTeamStatsForSeason = async (req, res) => {
   const { seasonId } = req.params // Renombrar para indicar múltiples IDs
   const { matchType = 'both', teamId } = req.query // Obtener el tipo de partido de los parámetros de consulta
-  console.log('seasonIds', seasonId)
   // Convertir el string de seasonIds en un array
   const seasonIdArray = seasonId.split(',')
 
@@ -2514,7 +2513,7 @@ const getTeamStatsNew = async (req, res) => {
     position = 'false'
   } = req.query
   const { teamId } = req.params
-
+  console.log('matchesCount+++', matchesCount)
   try {
     const booleanHomeOnly = homeOnly === 'true'
     const booleanAwayOnly = awayOnly === 'true'
@@ -2624,7 +2623,6 @@ const getTeamStatsNew = async (req, res) => {
           }
         }
         teamsInRange = getTeamsInRange(zoneTables, start, end)
-        console.log('zoneTables...', zoneTables)
         // const zonePositionTable = zoneTables
         // if (!zonePositionTable || !zonePositionTable.positions) {
         //   return res.status(404).json({ message: 'Zone Positions not found' })
@@ -2643,8 +2641,6 @@ const getTeamStatsNew = async (req, res) => {
         ]
       })
     }
-
-    console.log('QUERY', query.$and)
 
     const matches = await Match.find(query)
       .sort({ date: -1 })
@@ -3181,7 +3177,6 @@ const getTeamStatsForSingleTeam = async (req, res) => {
     includeAllSeasonMatches = 'false',
     position = 'false'
   } = req.query
-  console.log('HOLA SINGLE', season)
   try {
     const seasonIds = season ? season.split(',') : []
     let matchFilter
@@ -3211,12 +3206,16 @@ const getTeamStatsForSingleTeam = async (req, res) => {
       // Lógica adicional para filtrar según la posición del rival o alguna otra condición
     }
 
-    const matches = await Match.find(matchFilter).populate('homeTeam awayTeam')
+    let matches = await Match.find(matchFilter).sort({ date: -1 }).populate('homeTeam awayTeam')
+    // Limitar la cantidad de partidos si se ha especificado matchesCount
+    const matchesLimit = parseInt(matchesCount, 10)
+    if (!isNaN(matchesLimit) && matchesLimit > 0) {
+      matches = matches.slice(0, matchesLimit)
+    }
 
     // Inicializar estadísticas para un solo equipo
     const teamStats = {
       teamId,
-      teamName: '', // Aquí puedes asignar el nombre del equipo si lo tienes disponible
       statistics: {
         goals: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
         offsides: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
@@ -3274,7 +3273,6 @@ const getTeamStatsForSingleTeam = async (req, res) => {
     matches.forEach((match) => {
       const home = match.homeTeam._id.toString() === teamId
       const teamName = home ? match?.homeTeam?.name : match?.awayTeam?.name
-      console.log('teamName', match)
 
       // Asignar el nombre del equipo si no ha sido asignado todavía
       if (!teamStats.teamName) {
@@ -3301,7 +3299,6 @@ const getTeamStatsForSingleTeam = async (req, res) => {
     })
 
     finalizeStats(teamStats)
-    console.log('teamStats+++', teamStats)
     res.json([teamStats])
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener las estadísticas del equipo', error })
