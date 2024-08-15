@@ -2148,7 +2148,7 @@ const getZoneIdByTeam = async (idTeam, seasonId) => {
 
 const getTeamStatsForSeason = async (req, res) => {
   const { seasonId } = req.params // Renombrar para indicar múltiples IDs
-  const { matchType = 'both', teamId } = req.query // Obtener el tipo de partido de los parámetros de consulta
+  const { matchType = 'both', teamId, matchLimit } = req.query // Obtener el tipo de partido de los parámetros de consulta
   // Convertir el string de seasonIds en un array
   const seasonIdArray = seasonId.split(',')
 
@@ -2168,7 +2168,38 @@ const getTeamStatsForSeason = async (req, res) => {
     }
 
     // Buscar todos los partidos de las temporadas especificadas que estén finalizados
-    const matches = await Match.find(matchFilter).populate('homeTeam awayTeam')
+    let matches = await Match.find(matchFilter).populate('homeTeam awayTeam')
+
+    // Si se especifica un límite de partidos, filtrar los partidos por equipo
+    if (matchLimit) {
+      const teamMatchMap = {}
+
+      // Agrupar partidos por equipo
+      matches.forEach((match) => {
+        const homeTeamId = match.homeTeam._id.toString()
+        const awayTeamId = match.awayTeam._id.toString()
+
+        if (!teamMatchMap[homeTeamId]) {
+          teamMatchMap[homeTeamId] = []
+        }
+        if (!teamMatchMap[awayTeamId]) {
+          teamMatchMap[awayTeamId] = []
+        }
+
+        teamMatchMap[homeTeamId].push(match)
+        teamMatchMap[awayTeamId].push(match)
+      })
+
+      // Ordenar partidos por fecha y limitar a los últimos 'matchLimit' partidos
+      Object.keys(teamMatchMap).forEach((teamId) => {
+        teamMatchMap[teamId] = teamMatchMap[teamId]
+          .sort((a, b) => new Date(b.date) - new Date(a.date)) // Suponiendo que hay un campo `date` en el partido
+          .slice(0, matchLimit)
+      })
+
+      // Convertir el mapa a un array de partidos filtrados
+      matches = Object.values(teamMatchMap).flat()
+    }
 
     // Objeto para almacenar las estadísticas de cada equipo
     const teamStats = {}
