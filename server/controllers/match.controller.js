@@ -5,19 +5,14 @@ import { League } from '../../schemas/leagueSchema.js'
 import { Fecha } from '../../schemas/fechaSchema.js'
 import { Season } from '../../schemas/seasonSchema.js'
 import { PositionTable } from '../../schemas/tablePositionsSchema.js'
-import { calculatePositionTables } from '../services/tablePositions.js'
-import { Zone } from '../../schemas/zoneSchema.js'
-import { calculatePositionTablesZone } from '../services/getTablePositionsZone.js'
 import {
   updateSeasonPositionTable,
   updateZonePositionTablesFromGeneral
 } from '../services/updatePositionTables.js'
-import mongoose from 'mongoose'
 import {
   calculateStats as calculateStatsTable,
   calculateZoneStats
 } from './standings.controller.js'
-const ObjectId = mongoose.Types.ObjectId
 
 // Controlador para obtener todos los partidos con filtros opcionales
 const getAllMatches = async (req, res) => {
@@ -72,6 +67,7 @@ const getAllMatches = async (req, res) => {
     const matches = await Match.find(query)
       .populate('homeTeam awayTeam')
       .populate('league')
+      .populate('seasonYear')
 
     res.send(matches)
   } catch (error) {
@@ -80,57 +76,6 @@ const getAllMatches = async (req, res) => {
   }
 }
 
-// Controlador para crear un nuevo partido
-// const createMatch = async (req, res) => {
-//   try {
-//     const {
-//       homeTeamName,
-//       awayTeamName,
-//       date,
-//       league,
-//       seasonYear,
-//       round,
-//       country
-//     } = req.body
-
-//     // Buscar los IDs de los equipos en la base de datos
-//     const homeTeam = await Team.findOne({ name: homeTeamName })
-//     const awayTeam = await Team.findOne({ name: awayTeamName })
-
-//     if (!homeTeam || !awayTeam) {
-//       return res
-//         .status(400)
-//         .send('Uno o ambos equipos no existen en la base de datos')
-//     }
-
-//     // Crear un nuevo partido con los IDs encontrados y la fecha proporcionada
-//     const match = new Match({
-//       homeTeam: homeTeam._id,
-//       awayTeam: awayTeam._id,
-//       date,
-//       country,
-//       league,
-//       seasonYear,
-//       round
-//     })
-//     await match.save()
-
-//     // Obtener toda la información de los equipos y agregarla a la respuesta
-//     const populatedMatch = await match.populate('homeTeam awayTeam')
-
-//     // Actualizar la lista de partidos en la liga correspondiente
-//     const updatedLeague = await League.findByIdAndUpdate(
-//       league,
-//       { $push: { matches: match._id } },
-//       { new: true }
-//     )
-
-//     res.status(201).send(populatedMatch)
-//   } catch (error) {
-//     console.error('Error creating match:', error)
-//     res.status(500).send('An error occurred while creating the match')
-//   }
-// }
 const createMatch = async (req, res) => {
   try {
     const {
@@ -1660,10 +1605,18 @@ const getAllTeamsStats = async (req, res) => {
             )
             stats[statistic].scored.overRanges = determineRanges([3.5, 8.5], 1)
             break
+          case 'foults':
+            stats[statistic].total.overRanges = determineRanges([5.5, 16.5], 2)
+            stats[statistic].received.overRanges = determineRanges(
+              [0.5, 8.5],
+              1
+            )
+            stats[statistic].scored.overRanges = determineRanges([3.5, 8.5], 1)
+            break
           default:
             break
         }
-
+        // foults
         ['total', 'received', 'scored'].forEach((type) => {
           const overRanges = stats[statistic][type].overRanges
           Object.keys(overRanges).forEach((rangeKey) => {
@@ -2253,7 +2206,7 @@ const getTeamStatsForSeason = async (req, res) => {
         shots: { values: [], total: 0 },
         shotsOnTarget: { values: [], total: 0 },
         possession: { values: [], total: 0 },
-        fouls: { values: [], total: 0 }
+        foults: { values: [], total: 0 }
       },
       received: {
         goals: { values: [], total: 0 },
@@ -2264,7 +2217,7 @@ const getTeamStatsForSeason = async (req, res) => {
         shots: { values: [], total: 0 },
         shotsOnTarget: { values: [], total: 0 },
         possession: { values: [], total: 0 },
-        fouls: { values: [], total: 0 }
+        foults: { values: [], total: 0 }
       }
     })
     console.log('PARTIDOS++', matches)
@@ -2333,7 +2286,7 @@ const getTeamStatsForSeason = async (req, res) => {
 const processStats = (teamStatsSource, teamStatsReceived, teamStatsObj) => {
   const statsKeys = [
     'goals', 'offsides', 'yellowCards', 'redCards', 'corners',
-    'shots', 'shotsOnTarget', 'possession', 'fouls'
+    'shots', 'shotsOnTarget', 'possession', 'foults'
   ]
 
   statsKeys.forEach((statKey) => {
@@ -2708,10 +2661,24 @@ const getTeamStatsNew = async (req, res) => {
               1
             )
             break
+          case 'foults':
+            stats[statistic].total.overRanges = determineRanges(
+              [5.5, 16.5],
+              2
+            )
+            stats[statistic].received.overRanges = determineRanges(
+              [0.5, 8.5],
+              1
+            )
+            stats[statistic].scored.overRanges = determineRanges(
+              [0.5, 8.5],
+              1
+            )
+            break
           default:
             break
         }
-
+        // foults
         ['total', 'received', 'scored'].forEach((type) => {
           const overRanges = stats[statistic][type].overRanges
           Object.keys(overRanges).forEach((rangeKey) => {
@@ -3138,7 +3105,7 @@ const getTeamStatsForSingleTeam = async (req, res) => {
         shots: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
         shotsOnTarget: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
         possession: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
-        fouls: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 }
+        foults: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 }
       },
       received: {
         goals: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
@@ -3149,7 +3116,7 @@ const getTeamStatsForSingleTeam = async (req, res) => {
         shots: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
         shotsOnTarget: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
         possession: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 },
-        fouls: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 }
+        foults: { values: [], total: 0, promedio: 0, mediana: 0, desviacion: 0 }
       }
     }
 
