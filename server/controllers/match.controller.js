@@ -2195,8 +2195,9 @@ const getTeamStatsForSeason = async (req, res) => {
 
     const teamStats = {}
 
-    const initializeTeamStats = (teamName) => ({
+    const initializeTeamStats = (teamName, country) => ({
       team: teamName,
+      country,
       statistics: {
         goals: { values: [], total: 0 },
         offsides: { values: [], total: 0 },
@@ -2226,8 +2227,9 @@ const getTeamStatsForSeason = async (req, res) => {
       if (matchType === 'home' || matchType === 'both') {
         const homeTeamId = match.homeTeam._id.toString()
         const homeTeamName = match.homeTeam.name
+        const homeTeamCountry = match.homeTeam.country
         if (!teamStats[homeTeamId]) {
-          teamStats[homeTeamId] = initializeTeamStats(homeTeamName)
+          teamStats[homeTeamId] = initializeTeamStats(homeTeamName, homeTeamCountry)
         }
         processStats(match.teamStatistics.local, match.teamStatistics.visitor, teamStats[homeTeamId])
       }
@@ -2236,8 +2238,10 @@ const getTeamStatsForSeason = async (req, res) => {
       if (matchType === 'away' || matchType === 'both') {
         const awayTeamId = match.awayTeam._id.toString()
         const awayTeamName = match.awayTeam.name
+        const awayTeamCountry = match.awayTeam.country
+
         if (!teamStats[awayTeamId]) {
-          teamStats[awayTeamId] = initializeTeamStats(awayTeamName)
+          teamStats[awayTeamId] = initializeTeamStats(awayTeamName, awayTeamCountry)
         }
         processStats(match.teamStatistics.visitor, match.teamStatistics.local, teamStats[awayTeamId])
       }
@@ -2268,6 +2272,7 @@ const getTeamStatsForSeason = async (req, res) => {
 
     const teamStatsArray = Object.keys(teamStats).map((teamId) => ({
       teamId,
+      country: teamStats[teamId].country,
       teamName: teamStats[teamId].team,
       statistics: teamStats[teamId].statistics,
       received: teamStats[teamId].received
