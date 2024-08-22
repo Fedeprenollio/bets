@@ -1963,6 +1963,169 @@ const getZoneIdByTeam = async (idTeam, seasonId) => {
 
 // Función auxiliar para procesar estadísticas y evitar duplicaciones
 
+// const getTeamStatsForSeason = async (req, res) => {
+//   const { seasonId } = req.params
+//   const { matchType = 'both', teamId, matchLimit } = req.query
+//   const seasonIdArray = seasonId.split(',')
+
+//   try {
+//     // 1. Filtrar partidos por temporadas y equipo (si se proporciona)
+//     const matchFilter = {
+//       seasonYear: { $in: seasonIdArray },
+//       isFinished: true
+//     }
+
+//     if (teamId) {
+//       matchFilter.$or = [
+//         { 'homeTeam._id': teamId },
+//         { 'awayTeam._id': teamId }
+//       ]
+//     }
+
+//     const matches = await Match.find(matchFilter)
+//       .populate('homeTeam awayTeam')
+//       .sort({ date: -1 })
+
+//     // 2. Agrupar partidos por equipo
+//     const teamMatches = {}
+
+//     matches.forEach(match => {
+//       const homeTeamId = match.homeTeam._id.toString()
+//       const awayTeamId = match.awayTeam._id.toString()
+
+//       if (!teamMatches[homeTeamId]) {
+//         teamMatches[homeTeamId] = []
+//       }
+//       if (!teamMatches[awayTeamId]) {
+//         teamMatches[awayTeamId] = []
+//       }
+
+//       teamMatches[homeTeamId].push(match)
+//       teamMatches[awayTeamId].push(match)
+//     })
+
+//     // 3. Aplicar el límite de partidos por equipo
+//     if (matchLimit) {
+//       Object.keys(teamMatches).forEach(teamId => {
+//         teamMatches[teamId] = teamMatches[teamId].slice(0, matchLimit)
+//       })
+//     }
+
+//     // 4. Calcular las estadísticas por equipo
+//     const teamStats = {}
+
+//     const initializeTeamStats = (teamName, country) => ({
+//       team: teamName,
+//       country,
+//       statistics: {
+//         goals: { values: [], total: 0 },
+//         offsides: { values: [], total: 0 },
+//         yellowCards: { values: [], total: 0 },
+//         redCards: { values: [], total: 0 },
+//         corners: { values: [], total: 0 },
+//         shots: { values: [], total: 0 },
+//         shotsOnTarget: { values: [], total: 0 },
+//         possession: { values: [], total: 0 },
+//         foults: { values: [], total: 0 }
+//       },
+//       received: {
+//         goals: { values: [], total: 0 },
+//         offsides: { values: [], total: 0 },
+//         yellowCards: { values: [], total: 0 },
+//         redCards: { values: [], total: 0 },
+//         corners: { values: [], total: 0 },
+//         shots: { values: [], total: 0 },
+//         shotsOnTarget: { values: [], total: 0 },
+//         possession: { values: [], total: 0 },
+//         foults: { values: [], total: 0 }
+//       }
+//     })
+
+//     Object.keys(teamMatches).forEach(teamId => {
+//       const matches = teamMatches[teamId]
+//       if (matches.length === 0) return
+
+//       const teamName = matches[0].homeTeam._id.toString() === teamId
+//         ? matches[0].homeTeam.name
+//         : matches[0].awayTeam.name
+//       const teamCountry = matches[0].homeTeam._id.toString() === teamId
+//         ? matches[0].homeTeam.country
+//         : matches[0].awayTeam.country
+
+//       if (!teamStats[teamId]) {
+//         teamStats[teamId] = initializeTeamStats(teamName, teamCountry)
+//       }
+
+//       matches.forEach(match => {
+//         if (matchType === 'home' || matchType === 'both') {
+//           if (match.homeTeam._id.toString() === teamId) {
+//             processStats(match.teamStatistics.local, match.teamStatistics.visitor, teamStats[teamId])
+//           }
+//         }
+//         if (matchType === 'away' || matchType === 'both') {
+//           if (match.awayTeam._id.toString() === teamId) {
+//             processStats(match.teamStatistics.visitor, match.teamStatistics.local, teamStats[teamId])
+//           }
+//         }
+//       })
+//     })
+
+//     // 5. Preparar y devolver el resultado
+//     const calculateStats = values => {
+//       if (values.length === 0) return { promedio: 0, mediana: 0, desviacion: 0 }
+
+//       const promedio = parseFloat(ss.mean(values).toFixed(1))
+//       const mediana = parseFloat(ss.median(values).toFixed(1))
+//       const desviacion = parseFloat(ss.standardDeviation(values).toFixed(1))
+
+//       return { promedio, mediana, desviacion }
+//     }
+
+//     Object.values(teamStats).forEach(team => {
+//       Object.keys(team.statistics).forEach(statKey => {
+//         team.statistics[statKey] = {
+//           ...team.statistics[statKey],
+//           ...calculateStats(team.statistics[statKey].values)
+//         }
+//         team.received[statKey] = {
+//           ...team.received[statKey],
+//           ...calculateStats(team.received[statKey].values)
+//         }
+//       })
+//     })
+
+//     const teamStatsArray = Object.keys(teamStats).map(teamId => ({
+//       teamId,
+//       country: teamStats[teamId].country,
+//       teamName: teamStats[teamId].team,
+//       statistics: teamStats[teamId].statistics,
+//       received: teamStats[teamId].received
+//     }))
+
+//     res.json(teamStatsArray)
+//   } catch (error) {
+//     console.error('Error fetching team statistics for season:', error)
+//     res.status(500).json({
+//       error: 'An error occurred while fetching team statistics for season'
+//     })
+//   }
+// }
+
+// const processStats = (teamStatsSource, teamStatsReceived, teamStatsObj) => {
+//   const statsKeys = [
+//     'goals', 'offsides', 'yellowCards', 'redCards', 'corners',
+//     'shots', 'shotsOnTarget', 'possession', 'foults'
+//   ]
+
+//   statsKeys.forEach(statKey => {
+//     teamStatsObj.statistics[statKey].values.push(teamStatsSource[statKey] || 0)
+//     teamStatsObj.statistics[statKey].total += teamStatsSource[statKey] || 0
+
+//     teamStatsObj.received[statKey].values.push(teamStatsReceived[statKey] || 0)
+//     teamStatsObj.received[statKey].total += teamStatsReceived[statKey] || 0
+//   })
+// }
+
 const getTeamStatsForSeason = async (req, res) => {
   const { seasonId } = req.params
   const { matchType = 'both', teamId, matchLimit } = req.query
@@ -2000,11 +2163,16 @@ const getTeamStatsForSeason = async (req, res) => {
         teamMatches[awayTeamId] = []
       }
 
-      teamMatches[homeTeamId].push(match)
-      teamMatches[awayTeamId].push(match)
+      // Filtrar por tipo de partido antes de agregar a la lista del equipo
+      if (matchType === 'both' || matchType === 'home') {
+        teamMatches[homeTeamId].push(match)
+      }
+      if (matchType === 'both' || matchType === 'away') {
+        teamMatches[awayTeamId].push(match)
+      }
     })
 
-    // 3. Aplicar el límite de partidos por equipo
+    // 3. Aplicar el límite de partidos por equipo después de filtrar por tipo
     if (matchLimit) {
       Object.keys(teamMatches).forEach(teamId => {
         teamMatches[teamId] = teamMatches[teamId].slice(0, matchLimit)
