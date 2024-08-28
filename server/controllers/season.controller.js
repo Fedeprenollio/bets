@@ -426,7 +426,6 @@ const addMatchesToSeason = async (req, res) => {
 
     // Obtener la lista de partidos desde el cuerpo de la solicitud
     const matches = req.body.matches
-
     // Buscar la temporada por su ID
     const season = await Season.findById(seasonId).populate('zones')
     if (!season) {
@@ -437,7 +436,7 @@ const addMatchesToSeason = async (req, res) => {
     const teamsSeason = season.teams.map((team) => team.toString())
 
     // Verificar si los equipos de los partidos recibidos están en la temporada
-    const teamsInMatches = matches.every((match) => {
+    const teamsInMatches = matches?.every((match) => {
       return (
         teamsSeason.includes(match.homeTeam.toString()) &&
         teamsSeason.includes(match.awayTeam.toString())
@@ -503,6 +502,7 @@ const addMatchesToSeason = async (req, res) => {
         .populate('awayTeam')
         .populate('league')
         .populate('seasonYear')
+        .populate('referee')
 
       populatedMatches.push(populatedMatch)
     }

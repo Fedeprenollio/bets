@@ -46,6 +46,10 @@ const matchSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isNeutralCourt: {
+    type: Boolean,
+    default: false
+  },
   league: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'League' // Nombre del modelo de la liga
@@ -69,6 +73,10 @@ const matchSchema = new mongoose.Schema({
       type: Number,
       default: 0
     }
+  },
+  referee: { // Campo para asociar el árbitro
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Referee' // Nombre del modelo del árbitro
   }
 
 })

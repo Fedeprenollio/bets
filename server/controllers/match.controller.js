@@ -13,6 +13,7 @@ import {
   calculateStats as calculateStatsTable,
   calculateZoneStats
 } from './standings.controller.js'
+import { Referee } from '../../schemas/refereeSchema.js'
 
 // Controlador para obtener todos los partidos con filtros opcionales
 const getAllMatches = async (req, res) => {
@@ -68,6 +69,7 @@ const getAllMatches = async (req, res) => {
       .populate('homeTeam awayTeam')
       .populate('league')
       .populate('seasonYear')
+      .populate('referee')
 
     res.send(matches)
   } catch (error) {
@@ -154,61 +156,16 @@ const createMatch = async (req, res) => {
   }
 }
 
-// Controlador para actualizar el resultado de un partido
-// const updateMatchResult = async (req, res) => {
-//   try {
-//     const { goalsHome, goalsAway, teamStatistics } = req.body
-//     const matchId = req.params.id
-//     const match = await Match.findById(matchId)
-//     if (!match) {
-//       return res.status(404).send('Partido no encontrado')
-//     }
-//     // Actualizar estadísticas del equipo local
-//     match.teamStatistics.local.goals = teamStatistics.local.goals
-//     match.teamStatistics.local.shots = teamStatistics.local.totalShots
-//     match.teamStatistics.local.shotsOnTarget = teamStatistics.local.shotsOnTarget
-//     match.teamStatistics.local.possession = teamStatistics.local.possession
-//     // faltas
-//     match.teamStatistics.local.offsides = teamStatistics.local.offsides
-//     match.teamStatistics.local.yellowCards = teamStatistics.local.yellowCards
-//     match.teamStatistics.local.corners = teamStatistics.local.corners
-//     match.teamStatistics.local.foults = teamStatistics.local.foults
-
-//     match.teamStatistics.local.redCards = teamStatistics.local.redCards
-//     // Actualizar estadísticas del equipo visitante
-//     match.teamStatistics.visitor.goals = teamStatistics.visitor.goals
-//     match.teamStatistics.visitor.offsides = teamStatistics.visitor.offsides
-//     match.teamStatistics.visitor.yellowCards = teamStatistics.visitor.yellowCards
-//     match.teamStatistics.visitor.corners = teamStatistics.visitor.corners
-//     match.teamStatistics.visitor.possession = teamStatistics.visitor.possession
-//     match.teamStatistics.visitor.shotsOnTarget = teamStatistics.visitor.shotsOnTarget
-//     match.teamStatistics.visitor.shots = teamStatistics.visitor.totalShots
-//     match.teamStatistics.visitor.foults = teamStatistics.visitor.foults
-
-//     match.teamStatistics.visitor.redCards = teamStatistics.visitor.redCards
-
-//     // Actualizar resultado del partido
-//     match.goalsHome = goalsHome
-//     match.goalsAway = goalsAway
-//     match.isFinished = true
-//     await match.save()
-//     res.status(200).send(match)
-//   } catch (error) {
-//     console.error('Error updating match result:', error)
-//     res.status(500).send('An error occurred while updating match result')
-//   }
-// }
 const updateMatchResult = async (req, res) => {
   try {
-    const { goalsHome, goalsAway, teamStatistics, penaltyResult } = req.body
+    const { goalsHome, goalsAway, teamStatistics, penaltyResult, refereeId } = req.body
     const matchId = req.params.id
-    console.log('penaltyResult', penaltyResult)
+    console.log('req.body', req.body)
     // Buscar el partido por ID
     const match = await Match.findById(matchId)
     if (!match) {
       return res.status(404).send('Partido no encontrado')
     }
-
     // Actualizar estadísticas del equipo local
     const updateTeamStats = (teamStats, stats) => {
       teamStats.goals = stats.goals
@@ -235,6 +192,57 @@ const updateMatchResult = async (req, res) => {
       match.penaltyResult = {
         homePenalties: penaltyResult.homePenalties || 0,
         awayPenalties: penaltyResult.awayPenalties || 0
+      }
+    }
+
+    // Actualizar estadísticas del árbitro si se proporciona un ID de árbitro
+
+    // Si se proporciona un nuevo ID de árbitro, actualizar el árbitro y el partido
+    if (refereeId) {
+      match.referee = refereeId
+      console.log('match', match)
+
+      const referee = await Referee.findById(refereeId)
+      if (!referee) {
+        return res.status(404).send('Árbitro no encontrado')
+      }
+
+      // Verificar si el partido ya está en el array de partidos arbitrados
+      const matchIndex = referee.matchesOfficiated.findIndex(
+        (m) => m.matchId.toString() === matchId
+      )
+
+      // Si el partido no está en el array, agregarlo
+      if (matchIndex === -1) {
+        referee.matchesOfficiated.push({
+          matchId,
+          homeTeam: match.homeTeam,
+          awayTeam: match.awayTeam,
+          date: match.date
+        })
+      }
+
+      await referee.save()
+    } else if (match.referee) {
+      // Si no se proporciona un nuevo árbitro, pero el partido ya tiene un árbitro asignado
+      const referee = await Referee.findById(match.referee)
+      if (referee) {
+        // Verificar si el partido ya está en el array de partidos arbitrados
+        const matchIndex = referee.matchesOfficiated.findIndex(
+          (m) => m.matchId.toString() === matchId
+        )
+        console.log('ACA SI', matchIndex)
+        // Si el partido no está en el array, agregarlo
+        if (matchIndex === -1) {
+          referee.matchesOfficiated.push({
+            matchId,
+            homeTeam: match.homeTeam,
+            awayTeam: match.awayTeam,
+            date: match.date
+          })
+        }
+
+        await referee.save()
       }
     }
 

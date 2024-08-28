@@ -1,0 +1,77 @@
+### crear arbitro
+POST http://localhost:1234/referees
+Content-Type: application/json
+
+{
+  "name": "Pepe2",
+  "nationality": "Argenina"
+}
+
+### obtener todos los arbitro
+GET http://localhost:1234/referees
+
+
+### obtener un arbitro
+GET http://localhost:1234/referees/66cc157d8d341b845cc88eee
+
+
+###Crear partido
+POST http://localhost:1234/season/66a72672c34f09c5e4dc5655/matches
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoicHVjaG8iLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MjQ0NzYyMTgsImV4cCI6MTcyNTA4MTAxOH0.PRsR1f2W2XKsmXEsaotoB9skJNDWtic5g168dFWVdCQ
+
+{"matches":[
+        {   
+            "awayTeam": "664acca681ee69cfdd0b069b" ,
+            "homeTeam": "664acbec81ee69cfdd0b0685",
+            "country":"Argentina",
+            "league":"664acc0681ee69cfdd0b0689",
+            "seasonYear":"664acc7b81ee69cfdd0b068d",
+            "order": 2,
+            "round":"2",
+            "referee":"66cc157d8d341b845cc88eee"
+        }
+
+]}
+
+### agregar resultado
+PUT http://localhost:1234/match/66ccfca0cc56ddab403aa6fe/result
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoicHVjaG8iLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MjQ0NzYyMTgsImV4cCI6MTcyNTA4MTAxOH0.PRsR1f2W2XKsmXEsaotoB9skJNDWtic5g168dFWVdCQ
+
+ {
+  "goalsHome": 2,
+  "goalsAway": 2,
+  "teamStatistics": {
+    "local": {
+      "goals": 2,
+      "offsides": 4,
+      "yellowCards": 2,
+      "redCards": null,
+      "corners": 1,
+      "possession": 33,
+      "totalShots": 1,
+      "shotsOnTarget": 1,
+      "foults": 4
+    },
+    "visitor": {
+      "goals": 2,
+      "totalShots": 3,
+      "shotsOnTarget": 2,
+      "possession": 67,
+      "yellowCards": 3,
+      "corners": 2,
+      "offsides": 4,
+      "foults": 1,
+      "redCards": null
+    }
+  },
+  "isFinished": true,
+  "penaltyResult": { "homePenalties": null, "awayPenalties": null },
+   "refereeId":"66cc157d8d341b845cc88eee"
+}
+
+
+
+### obtener un arbitro
+GET http://localhost:1234/referees/statistics/refereeId=66cc157d8d341b845cc88eee
