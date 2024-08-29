@@ -9,6 +9,10 @@ const RefereeSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  image: {
+    type: String,
+    required: false
+  },
   matchesOfficiated: [
     {
       matchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Match' },
