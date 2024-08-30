@@ -426,6 +426,7 @@ const addMatchesToSeason = async (req, res) => {
 
     // Obtener la lista de partidos desde el cuerpo de la solicitud
     const matches = req.body.matches
+    console.log('matches', matches)
     // Buscar la temporada por su ID
     const season = await Season.findById(seasonId).populate('zones')
     if (!season) {
@@ -449,6 +450,11 @@ const addMatchesToSeason = async (req, res) => {
     // Iterar sobre los partidos y asociarlos a las "Fechas" (rondas)
     const populatedMatches = []
     for (const matchData of matches) {
+      // Eliminar la propiedad 'referee' si está vacía
+      if (matchData.referee === '') {
+        delete matchData.referee
+      }
+      console.log('matchData', matchData)
       // Crear el partido
       const match = await Match.create(matchData)
 
