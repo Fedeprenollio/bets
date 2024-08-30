@@ -183,135 +183,6 @@ export const filterRefereeStatistics = async (req, res) => {
 //   try {
 //     const { refereeId, teamId1, condition, season, limit } = req.query
 
-//     // Verifica que `refereeId` sea un ObjectId válido
-//     if (!mongoose.Types.ObjectId.isValid(refereeId)) {
-//       return res.status(400).json({ message: 'Invalid refereeId' })
-//     }
-
-//     // Filtra los partidos arbitrados por el árbitro y popula los equipos
-//     const referee = await Referee.findById(refereeId).populate({
-//       path: 'matchesOfficiated.matchId',
-//       select: 'teamStatistics homeTeam awayTeam seasonYear',
-//       populate: [
-//         { path: 'homeTeam', select: 'name' },
-//         { path: 'awayTeam', select: 'name' }
-//       ],
-//       options: {
-//         limit: limit ? parseInt(limit) : 0
-//       }
-//     })
-
-//     if (!referee) {
-//       return res.status(404).json({ message: 'Referee not found' })
-//     }
-
-//     // Variables para acumular estadísticas
-//     let totalFoulsHome = 0
-//     let totalFoulsAway = 0
-//     let totalYellowCardsHome = 0
-//     let totalYellowCardsAway = 0
-//     let teamName = teamId1 ? '' : 'All teams'
-
-//     // Almacena los partidos considerados
-//     const consideredMatches = []
-
-//     // Almacena estadísticas por equipo
-//     const teamStatistics = {}
-
-//     // Recorre los partidos oficiados por el árbitro
-//     referee.matchesOfficiated.forEach(({ matchId }) => {
-//       if (!matchId || !matchId.teamStatistics) return
-
-//       const { homeTeam, awayTeam, teamStatistics: matchTeamStats, seasonYear } = matchId
-
-//       // Filtrar por temporada si se especifica
-//       if (season && season !== seasonYear.toString()) {
-//         return
-//       }
-
-//       // Agregar el partido a la lista de partidos considerados
-//       consideredMatches.push({
-//         matchId: matchId._id,
-//         homeTeam: homeTeam.name,
-//         awayTeam: awayTeam.name,
-//         date: matchId.date,
-//         teamStatistics: matchTeamStats
-//       })
-
-//       // Si se pasa `teamId1`, filtrar por ese equipo
-//       if (teamId1) {
-//         const isHomeTeam = homeTeam && homeTeam._id.toString() === teamId1
-//         const isAwayTeam = awayTeam && awayTeam._id.toString() === teamId1
-
-//         teamName = isHomeTeam ? homeTeam.name : isAwayTeam ? awayTeam.name : ''
-
-//         if (condition === 'local' && isHomeTeam) {
-//           totalFoulsHome += matchTeamStats.local.foults || 0
-//           totalYellowCardsHome += matchTeamStats.local.yellowCards || 0
-//         } else if (condition === 'visitor' && isAwayTeam) {
-//           totalFoulsAway += matchTeamStats.visitor.foults || 0
-//           totalYellowCardsAway += matchTeamStats.visitor.yellowCards || 0
-//         }
-//       } else {
-//         // Si no se pasa `teamId1`, sumar estadísticas de todos los partidos
-//         if (!condition || condition === 'local') {
-//           totalFoulsHome += matchTeamStats.local.foults || 0
-//           totalYellowCardsHome += matchTeamStats.local.yellowCards || 0
-//         }
-//         if (!condition || condition === 'visitor') {
-//           totalFoulsAway += matchTeamStats.visitor.foults || 0
-//           totalYellowCardsAway += matchTeamStats.visitor.yellowCards || 0
-//         }
-//       }
-
-//       // Registrar estadísticas por equipo
-//       [homeTeam, awayTeam].forEach(team => {
-//         if (team) {
-//           const teamId = team._id.toString()
-//           if (!teamStatistics[teamId]) {
-//             teamStatistics[teamId] = {
-//               teamName: team.name,
-//               totalFoulsHome: 0,
-//               totalFoulsAway: 0,
-//               totalYellowCardsHome: 0,
-//               totalYellowCardsAway: 0
-//             }
-//           }
-
-//           if (homeTeam._id.toString() === teamId) {
-//             teamStatistics[teamId].totalFoulsHome += matchTeamStats.local.foults || 0
-//             teamStatistics[teamId].totalYellowCardsHome += matchTeamStats.local.yellowCards || 0
-//           }
-
-//           if (awayTeam._id.toString() === teamId) {
-//             teamStatistics[teamId].totalFoulsAway += matchTeamStats.visitor.foults || 0
-//             teamStatistics[teamId].totalYellowCardsAway += matchTeamStats.visitor.yellowCards || 0
-//           }
-//         }
-//       })
-//     })
-
-//     // Retorna las estadísticas acumuladas
-//     res.status(200).json({
-//       name: referee.name,
-//       condition,
-//       teamName,
-//       totalFoulsHome,
-//       totalFoulsAway,
-//       totalYellowCardsHome,
-//       totalYellowCardsAway,
-//       consideredMatches,
-//       teamStatistics: Object.values(teamStatistics)
-//     })
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error retrieving statistics', error: error.message })
-//   }
-// }
-
-// export const getRefereeStatistics = async (req, res) => {
-//   try {
-//     const { refereeId, teamId1, condition, season, limit } = req.query
-
 //     // Construcción de filtro para los partidos oficiados
 //     const matchFilters = {}
 //     if (season) {
@@ -328,6 +199,12 @@ export const filterRefereeStatistics = async (req, res) => {
 //       const consideredMatches = []
 //       const teamStatistics = {}
 
+//       // Acumuladores para media, mediana y desviación estándar
+//       const foulsHome = []
+//       const foulsAway = []
+//       const yellowCardsHome = []
+//       const yellowCardsAway = []
+
 //       referee.matchesOfficiated.forEach(({ matchId }) => {
 //         if (!matchId || !matchId.teamStatistics) return
 
@@ -342,7 +219,7 @@ export const filterRefereeStatistics = async (req, res) => {
 //           teamStatistics: matchTeamStats
 //         })
 
-//         // Si se pasa `teamId1`, filtrar por ese equipo
+//         // Acumuladores para la estadística
 //         if (teamId1) {
 //           const isHomeTeam = homeTeam && homeTeam._id.toString() === teamId1
 //           const isAwayTeam = awayTeam && awayTeam._id.toString() === teamId1
@@ -352,19 +229,27 @@ export const filterRefereeStatistics = async (req, res) => {
 //           if (condition === 'local' && isHomeTeam) {
 //             totalFoulsHome += matchTeamStats.local.foults || 0
 //             totalYellowCardsHome += matchTeamStats.local.yellowCards || 0
+//             foulsHome.push(matchTeamStats.local.foults || 0)
+//             yellowCardsHome.push(matchTeamStats.local.yellowCards || 0)
 //           } else if (condition === 'visitor' && isAwayTeam) {
 //             totalFoulsAway += matchTeamStats.visitor.foults || 0
 //             totalYellowCardsAway += matchTeamStats.visitor.yellowCards || 0
+//             foulsAway.push(matchTeamStats.visitor.foults || 0)
+//             yellowCardsAway.push(matchTeamStats.visitor.yellowCards || 0)
 //           }
 //         } else {
 //           // Sumar estadísticas de todos los partidos
 //           if (!condition || condition === 'local') {
 //             totalFoulsHome += matchTeamStats.local.foults || 0
 //             totalYellowCardsHome += matchTeamStats.local.yellowCards || 0
+//             foulsHome.push(matchTeamStats.local.foults || 0)
+//             yellowCardsHome.push(matchTeamStats.local.yellowCards || 0)
 //           }
 //           if (!condition || condition === 'visitor') {
 //             totalFoulsAway += matchTeamStats.visitor.foults || 0
 //             totalYellowCardsAway += matchTeamStats.visitor.yellowCards || 0
+//             foulsAway.push(matchTeamStats.visitor.foults || 0)
+//             yellowCardsAway.push(matchTeamStats.visitor.yellowCards || 0)
 //           }
 //         }
 
@@ -395,6 +280,18 @@ export const filterRefereeStatistics = async (req, res) => {
 //         })
 //       })
 
+//       // Calcular estadísticas adicionales solo si hay datos
+//       const calculateStats = (data) => ({
+//         mean: data.length > 0 ? ss.mean(data) : 0,
+//         median: data.length > 0 ? ss.median(data) : 0,
+//         stdDev: data.length > 0 ? ss.standardDeviation(data) : 0
+//       })
+
+//       const foulsHomeStats = calculateStats(foulsHome)
+//       const foulsAwayStats = calculateStats(foulsAway)
+//       const yellowCardsHomeStats = calculateStats(yellowCardsHome)
+//       const yellowCardsAwayStats = calculateStats(yellowCardsAway)
+
 //       return {
 //         name: referee.name,
 //         condition,
@@ -404,6 +301,11 @@ export const filterRefereeStatistics = async (req, res) => {
 //         totalYellowCardsHome,
 //         totalYellowCardsAway,
 //         consideredMatches,
+//         totalMatches: referee.matchesOfficiated.length, // Total de partidos dirigidos
+//         foulsHomeStats,
+//         foulsAwayStats,
+//         yellowCardsHomeStats,
+//         yellowCardsAwayStats,
 //         teamStatistics: Object.values(teamStatistics)
 //       }
 //     }
@@ -460,13 +362,11 @@ export const getRefereeStatistics = async (req, res) => {
   try {
     const { refereeId, teamId1, condition, season, limit } = req.query
 
-    // Construcción de filtro para los partidos oficiados
     const matchFilters = {}
     if (season) {
       matchFilters['matchesOfficiated.matchId.seasonYear'] = season
     }
 
-    // Función para calcular estadísticas de un árbitro
     const calculateStatistics = (referee) => {
       let totalFoulsHome = 0
       let totalFoulsAway = 0
@@ -476,7 +376,6 @@ export const getRefereeStatistics = async (req, res) => {
       const consideredMatches = []
       const teamStatistics = {}
 
-      // Acumuladores para media, mediana y desviación estándar
       const foulsHome = []
       const foulsAway = []
       const yellowCardsHome = []
@@ -487,7 +386,6 @@ export const getRefereeStatistics = async (req, res) => {
 
         const { homeTeam, awayTeam, teamStatistics: matchTeamStats, seasonYear } = matchId
 
-        // Agregar el partido a la lista de partidos considerados
         consideredMatches.push({
           matchId: matchId._id,
           homeTeam: homeTeam.name,
@@ -496,7 +394,6 @@ export const getRefereeStatistics = async (req, res) => {
           teamStatistics: matchTeamStats
         })
 
-        // Acumuladores para la estadística
         if (teamId1) {
           const isHomeTeam = homeTeam && homeTeam._id.toString() === teamId1
           const isAwayTeam = awayTeam && awayTeam._id.toString() === teamId1
@@ -515,7 +412,6 @@ export const getRefereeStatistics = async (req, res) => {
             yellowCardsAway.push(matchTeamStats.visitor.yellowCards || 0)
           }
         } else {
-          // Sumar estadísticas de todos los partidos
           if (!condition || condition === 'local') {
             totalFoulsHome += matchTeamStats.local.foults || 0
             totalYellowCardsHome += matchTeamStats.local.yellowCards || 0
@@ -530,7 +426,6 @@ export const getRefereeStatistics = async (req, res) => {
           }
         }
 
-        // Registrar estadísticas por equipo
         [homeTeam, awayTeam].forEach((team) => {
           if (team) {
             const teamId = team._id.toString()
@@ -557,7 +452,6 @@ export const getRefereeStatistics = async (req, res) => {
         })
       })
 
-      // Calcular estadísticas adicionales solo si hay datos
       const calculateStats = (data) => ({
         mean: data.length > 0 ? ss.mean(data) : 0,
         median: data.length > 0 ? ss.median(data) : 0,
@@ -570,6 +464,7 @@ export const getRefereeStatistics = async (req, res) => {
       const yellowCardsAwayStats = calculateStats(yellowCardsAway)
 
       return {
+        refereeId: referee._id, // Agregar el ID del árbitro
         name: referee.name,
         condition,
         teamName,
@@ -587,7 +482,6 @@ export const getRefereeStatistics = async (req, res) => {
       }
     }
 
-    // Si se pasa `refereeId`, retorna estadísticas para un árbitro específico
     if (refereeId) {
       if (!mongoose.Types.ObjectId.isValid(refereeId)) {
         return res.status(400).json({ message: 'Invalid refereeId' })
@@ -613,7 +507,6 @@ export const getRefereeStatistics = async (req, res) => {
       const statistics = calculateStatistics(referee)
       return res.status(200).json(statistics)
     } else {
-      // Si no se pasa `refereeId`, retorna estadísticas para todos los árbitros
       const referees = await Referee.find().populate({
         path: 'matchesOfficiated.matchId',
         select: 'teamStatistics homeTeam awayTeam seasonYear',
