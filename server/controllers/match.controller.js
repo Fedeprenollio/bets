@@ -2325,8 +2325,8 @@ const updateMatchById = async (req, res) => {
   try {
     const matchId = req.params.id
     const {
-      homeTeamName,
-      awayTeamName,
+      homeTeam,
+      awayTeam,
       date,
       league,
       seasonYear,
@@ -2334,13 +2334,15 @@ const updateMatchById = async (req, res) => {
       country,
       goalsHome,
       goalsAway,
-      isFinished
+      isFinished,
+      referee
     } = req.body
+    console.log('req.body', req.body)
 
     // Primero, construyes el objeto de actualización con los campos que deseas modificar
     const updateFields = {
-      homeTeam: homeTeamName,
-      awayTeam: awayTeamName,
+      homeTeam,
+      awayTeam,
       date,
       league,
       seasonYear,
@@ -2350,7 +2352,10 @@ const updateMatchById = async (req, res) => {
       goalsAway,
       isFinished
     }
-
+    // Si se proporciona un referee y no está vacío, lo añadimos al objeto de actualización
+    if (referee && referee !== '') {
+      updateFields.referee = referee
+    }
     // Luego, utilizas findByIdAndUpdate para buscar y actualizar el partido por su ID
     // El tercer parámetro opcional configura la opción 'new' como true para devolver el documento actualizado
     const updatedMatch = await Match.findByIdAndUpdate(matchId, updateFields, {
@@ -2361,7 +2366,7 @@ const updateMatchById = async (req, res) => {
       return res.status(404).send('Partido no encontrado')
     }
 
-    res.status(200).send(updatedMatch)
+    res.status(200).send({ updatedMatch, state: 'ok' })
   } catch (error) {
     console.error('Error updating match by ID:', error)
     res.status(500).send('An error occurred while updating match by ID')
