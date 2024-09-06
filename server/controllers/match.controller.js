@@ -49,6 +49,7 @@ const getAllMatches = async (req, res) => {
 
     // Agregar filtro por fecha si se proporciona
     if (req.query.date) {
+      console.log('req.query.date', req.query.date)
       const selectedDate = new Date(req.query.date)
       const nextDay = new Date(selectedDate)
       nextDay.setDate(nextDay.getDate() + 1) // Añadir un día para obtener la fecha límite
@@ -160,9 +161,10 @@ const updateMatchResult = async (req, res) => {
   try {
     const { goalsHome, goalsAway, teamStatistics, penaltyResult, refereeId } = req.body
     const matchId = req.params.id
-    console.log('req.body', req.body)
     // Buscar el partido por ID
+    // const match = await Match.findById(matchId).populate('referee').exec()
     const match = await Match.findById(matchId)
+
     if (!match) {
       return res.status(404).send('Partido no encontrado')
     }
@@ -200,7 +202,6 @@ const updateMatchResult = async (req, res) => {
     // Si se proporciona un nuevo ID de árbitro, actualizar el árbitro y el partido
     if (refereeId) {
       match.referee = refereeId
-      console.log('match', match)
 
       const referee = await Referee.findById(refereeId)
       if (!referee) {
@@ -231,7 +232,6 @@ const updateMatchResult = async (req, res) => {
         const matchIndex = referee.matchesOfficiated.findIndex(
           (m) => m.matchId.toString() === matchId
         )
-        console.log('ACA SI', matchIndex)
         // Si el partido no está en el array, agregarlo
         if (matchIndex === -1) {
           referee.matchesOfficiated.push({
@@ -248,11 +248,8 @@ const updateMatchResult = async (req, res) => {
 
     // Guardar el partido actualizado
     await match.save()
-
-    // Actualizar la tabla de posiciones
-    // await updatePositionTable(match.seasonYear, match.league)
-
-    res.status(200).send(match)
+    const matchPopulated = await Match.findById(matchId).populate('referee')
+    res.status(200).send(matchPopulated)
   } catch (error) {
     console.error('Error updating match result:', error)
     res.status(500).send('An error occurred while updating match result')
