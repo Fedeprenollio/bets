@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { Referee } from '../../schemas/refereeSchema.js'
+import { Match } from '../../schemas/match.js'
 import * as ss from 'simple-statistics'
 
 // Create a new referee
@@ -381,16 +382,25 @@ export const getRefereeStatistics = async (req, res) => {
       const yellowCardsHome = []
       const yellowCardsAway = []
 
-      referee.matchesOfficiated.forEach(({ matchId }) => {
+      referee.matchesOfficiated.forEach(async ({ matchId }) => {
         if (!matchId || !matchId.teamStatistics) return
 
-        const { homeTeam, awayTeam, teamStatistics: matchTeamStats, seasonYear } = matchId
-
+        const { homeTeam, awayTeam, teamStatistics: matchTeamStats, seasonYear, date, league, round } = matchId
+        // const match = await Match.findById(matchId)
+        console.log('CACA', awayTeam)
         consideredMatches.push({
           matchId: matchId._id,
+          // match,
           homeTeam: homeTeam.name,
+          homeLogo: homeTeam.logo,
+
           awayTeam: awayTeam.name,
-          date: matchId.date,
+          awayLogo: awayTeam.logo,
+
+          date,
+          round,
+          leagueName: league ? league.name : 'Desconocida',
+          season: seasonYear ? seasonYear.year : 'Desconocida',
           teamStatistics: matchTeamStats
         })
 
@@ -489,22 +499,30 @@ export const getRefereeStatistics = async (req, res) => {
 
       const referee = await Referee.findById(refereeId).populate({
         path: 'matchesOfficiated.matchId',
-        select: 'teamStatistics homeTeam awayTeam seasonYear',
+        select: 'teamStatistics homeTeam awayTeam seasonYear date leagueId round',
         populate: [
-          { path: 'homeTeam', select: 'name' },
-          { path: 'awayTeam', select: 'name' }
+          { path: 'homeTeam', select: 'name logo' },
+          // { path: 'homeTeam', select: 'logo' },
+          { path: 'awayTeam', select: 'name logo' },
+          // { path: 'awayTeam', select: 'logo' },
+
+          { path: 'league', select: 'name' },
+          { path: 'seasonYear', select: 'year' }
+
         ],
         match: matchFilters,
         options: {
           limit: limit ? parseInt(limit) : 0
         }
       })
-
+      console.log('referee', referee)
       if (!referee) {
         return res.status(404).json({ message: 'Referee not found' })
       }
 
       const statistics = calculateStatistics(referee)
+      console.log('allStatistics', statistics)
+
       return res.status(200).json(statistics)
     } else {
       const referees = await Referee.find().populate({
