@@ -373,6 +373,9 @@ export const getRefereeStatistics = async (req, res) => {
       let totalFoulsAway = 0
       let totalYellowCardsHome = 0
       let totalYellowCardsAway = 0
+      let totalHomeWins = 0
+      let totalAwayWins = 0
+      let totalDraws = 0
       let teamName = teamId1 ? '' : 'All teams'
       const consideredMatches = []
       const teamStatistics = {}
@@ -386,14 +389,16 @@ export const getRefereeStatistics = async (req, res) => {
         if (!matchId || !matchId.teamStatistics) return
 
         const { homeTeam, awayTeam, teamStatistics: matchTeamStats, seasonYear, date, league, round } = matchId
-        // const match = await Match.findById(matchId)
-        console.log('CACA', awayTeam)
+
+        // Usar goles para calcular los resultados del partido
+        const homeGoals = matchTeamStats.local.goals || 0
+        const awayGoals = matchTeamStats.visitor.goals || 0
         consideredMatches.push({
           matchId: matchId._id,
-          // match,
           homeTeam: homeTeam.name,
           homeLogo: homeTeam.logo,
-
+          homeGoals,
+          awayGoals,
           awayTeam: awayTeam.name,
           awayLogo: awayTeam.logo,
 
@@ -403,6 +408,15 @@ export const getRefereeStatistics = async (req, res) => {
           season: seasonYear ? seasonYear.year : 'Desconocida',
           teamStatistics: matchTeamStats
         })
+
+        // Contar resultados
+        if (homeGoals > awayGoals) {
+          totalHomeWins += 1
+        } else if (awayGoals > homeGoals) {
+          totalAwayWins += 1
+        } else {
+          totalDraws += 1
+        }
 
         if (teamId1) {
           const isHomeTeam = homeTeam && homeTeam._id.toString() === teamId1
@@ -473,6 +487,11 @@ export const getRefereeStatistics = async (req, res) => {
       const yellowCardsHomeStats = calculateStats(yellowCardsHome)
       const yellowCardsAwayStats = calculateStats(yellowCardsAway)
 
+      const totalMatches = referee.matchesOfficiated.length
+
+      const homeWinPercentage = totalMatches > 0 ? (totalHomeWins / totalMatches) * 100 : 0
+      const awayWinPercentage = totalMatches > 0 ? (totalAwayWins / totalMatches) * 100 : 0
+      const drawPercentage = totalMatches > 0 ? (totalDraws / totalMatches) * 100 : 0
       return {
         refereeId: referee._id, // Agregar el ID del árbitro
         name: referee.name,
@@ -488,7 +507,10 @@ export const getRefereeStatistics = async (req, res) => {
         foulsAwayStats,
         yellowCardsHomeStats,
         yellowCardsAwayStats,
-        teamStatistics: Object.values(teamStatistics)
+        teamStatistics: Object.values(teamStatistics),
+        homeWinPercentage,
+        awayWinPercentage,
+        drawPercentage
       }
     }
 
