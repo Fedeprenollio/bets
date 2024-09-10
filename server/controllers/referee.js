@@ -362,11 +362,21 @@ export const filterRefereeStatistics = async (req, res) => {
 export const getRefereeStatistics = async (req, res) => {
   try {
     const { refereeId, teamId1, condition, season, limit } = req.query
-
+    console.log('season', season)
     const matchFilters = {}
-    if (season) {
-      matchFilters['matchesOfficiated.matchId.seasonYear'] = season
+    // if (season) {
+    //   matchFilters['matchesOfficiated.matchId.seasonYear'] = season
+    // }
+    // Si 'season' es un array de ids, usamos $in para filtrar por múltiples temporadas
+
+    // Si 'season' es un array de ids, usamos $in para filtrar por múltiples temporadas
+    const seasonsArray = season ? season.split(',') : []
+
+    if (seasonsArray.length > 0) {
+      matchFilters.seasonYear = { $in: seasonsArray }
     }
+
+    console.log('matchFilters', matchFilters)
 
     const calculateStatistics = (referee) => {
       let totalFoulsHome = 0
@@ -405,7 +415,8 @@ export const getRefereeStatistics = async (req, res) => {
           date,
           round,
           leagueName: league ? league.name : 'Desconocida',
-          season: seasonYear ? seasonYear.year : 'Desconocida',
+          // season: seasonYear ? seasonYear.year : 'Desconocida',
+          season: seasonYear ? { id: seasonYear._id, year: seasonYear.year } : { id: null, name: 'Desconocida' },
           teamStatistics: matchTeamStats
         })
 
@@ -519,31 +530,52 @@ export const getRefereeStatistics = async (req, res) => {
         return res.status(400).json({ message: 'Invalid refereeId' })
       }
 
-      const referee = await Referee.findById(refereeId).populate({
-        path: 'matchesOfficiated.matchId',
-        select: 'teamStatistics homeTeam awayTeam seasonYear date leagueId round',
-        populate: [
-          { path: 'homeTeam', select: 'name logo' },
-          // { path: 'homeTeam', select: 'logo' },
-          { path: 'awayTeam', select: 'name logo' },
-          // { path: 'awayTeam', select: 'logo' },
+      // const referee = await Referee.findById(refereeId).populate({
+      //   path: 'matchesOfficiated.matchId',
+      //   select: 'teamStatistics homeTeam awayTeam seasonYear date leagueId round',
+      //   populate: [
+      //     { path: 'homeTeam', select: 'name logo' },
+      //     // { path: 'homeTeam', select: 'logo' },
+      //     { path: 'awayTeam', select: 'name logo' },
+      //     // { path: 'awayTeam', select: 'logo' },
 
-          { path: 'league', select: 'name' },
-          { path: 'seasonYear', select: 'year' }
+      //     { path: 'league', select: 'name' },
+      //     { path: 'seasonYear', select: 'year' }
 
-        ],
-        match: matchFilters,
-        options: {
-          limit: limit ? parseInt(limit) : 0
-        }
-      })
+      //   ],
+      //   match: matchFilters,
+      //   options: {
+      //     limit: limit ? parseInt(limit) : 0
+      //   }
+      // })
+
+      // Consultar el árbitro con el filtro opcional
+      const referee = await Referee.findById(refereeId)
+        .populate({
+          path: 'matchesOfficiated.matchId',
+          match: matchFilters, // Aplicar el filtro aquí
+          select: 'teamStatistics homeTeam awayTeam seasonYear date league round',
+          populate: [
+            { path: 'homeTeam', select: 'name logo' },
+            { path: 'awayTeam', select: 'name logo' },
+            { path: 'league', select: 'name' },
+            { path: 'seasonYear', select: 'year' }
+          ],
+          options: {
+            limit: limit ? parseInt(limit) : 0
+          }
+        })
+        .exec()
+
       console.log('referee', referee)
+      // Opcional: Mostrar los resultados filtrados
+      // console.log('REFEREE', JSON.stringify(referee, null, 2))
+
       if (!referee) {
         return res.status(404).json({ message: 'Referee not found' })
       }
 
       const statistics = calculateStatistics(referee)
-      console.log('allStatistics', statistics)
 
       return res.status(200).json(statistics)
     } else {
