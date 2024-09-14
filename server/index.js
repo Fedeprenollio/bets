@@ -15,6 +15,7 @@ import { fechaRouter } from './routes/fecha.js'
 import tableRouter from './routes/table.js'
 import zoneRouter from './routes/zone.js'
 import refereeRouter from './routes/referee.js'
+import { scrapeRouter } from './routes/scrape.js'
 const URI_DB = process.env.URI_DB
 
 const PORT = process.env.PORT || 1234
@@ -24,7 +25,7 @@ const corsOptions = {
   origin: ['http://localhost:5173', 'https://bet-reason.vercel.app', 'http://localhost:5174'], // Sin coma después del último elemento
   credentials: true // Habilita el envío de credenciales en las solicitudes CORS
 }
-
+// 'https://www.365scores.com'
 app.use(cors(corsOptions))
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT')
@@ -48,6 +49,7 @@ app.use('/fecha', fechaRouter)
 app.use('/tablePosition', tableRouter)
 app.use('/zones', zoneRouter)
 app.use('/referees', refereeRouter)
+app.use('/scrape', scrapeRouter)
 
 app.use('/verify-token', verifyTokenRouter)
 
