@@ -1,12 +1,19 @@
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 import puppeteer from 'puppeteer'
+const isProduction = process.env.NODE_ENV === 'production' // Verifica si estás en producción
+const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined // Solo usa el path si está en producción
 
 export const getScraping = async (req, res) => {
   const { url } = req.body
 
   try {
-    const browser = await puppeteer.launch()
+    // Aquí lanzas el navegador con `executablePath` para producción
+    const browser = await puppeteer.launch({
+      executablePath: isProduction ? executablePath : undefined, // En producción usa el path, en desarrollo no
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    })
+    // const browser = await puppeteer.launch()
     // const browser = await puppeteer.launch({ headless: false })
 
     const page = await browser.newPage()
