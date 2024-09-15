@@ -8,7 +8,7 @@ const isProduction = process.env.NODE_ENV === 'production'
 
 // Ruta del ejecutable en producción
 const executablePath = isProduction
-  ? '/opt/render/project/.cache/puppeteer/chrome/chrome.exe' // Cambia esto a la ruta correcta de tu entorno
+  ? '/opt/render/project/.cache/puppeteer' // Cambia esto a la ruta correcta de tu entorno
   : 'C:/Program Files/Google/Chrome/Application/chrome.exe' // Ruta para desarrollo local
 
 export const getScraping = async (req, res) => {
