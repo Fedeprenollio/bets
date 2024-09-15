@@ -1,10 +1,9 @@
 import * as cheerio from 'cheerio'
 import puppeteer from 'puppeteer'
 import path from 'path'
-import { fileURLToPath } from 'url' // Verifica si estás en producción
-
-// Crear la carpeta de caché si no existe
+import { fileURLToPath } from 'url'
 import fs from 'fs'
+
 const isProduction = process.env.NODE_ENV === 'production'
 
 export const getScraping = async (req, res) => {
