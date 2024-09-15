@@ -1,28 +1,28 @@
 import * as cheerio from 'cheerio'
 import puppeteer from 'puppeteer'
 import path from 'path'
-import { fileURLToPath } from 'url' // Verifica si estás en producción
-
-// Crear la carpeta de caché si no existe
+import { fileURLToPath } from 'url'
 import fs from 'fs'
+
 const isProduction = process.env.NODE_ENV === 'production'
+
 // Obtener el nombre y directorio del archivo actual
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Usar import.meta.url para construir la ruta
+// Importar configuración desde el archivo puppeteer.config.cjs
 const configPath = new URL('../../puppeteer.config.cjs', import.meta.url)
-console.log('configPath', configPath)
-const { cacheDirectory } = await import(configPath)
-console.log('cacheDirectory', cacheDirectory)
+const { cacheDirectory } = await import(configPath.pathname) // Acceder a cacheDirectory
+
+console.log('cacheDirectory:', cacheDirectory)
 
 // Crear la carpeta de caché si no existe
 if (!fs.existsSync(cacheDirectory)) {
   fs.mkdirSync(cacheDirectory, { recursive: true })
 }
-// Obtener el path del ejecutable
-// const executablePath = config.executablePath
-const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH
+
+// Usar la variable de entorno para el ejecutable de Chrome en producción
+const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser' // Cambia según tu entorno
 
 export const getScraping = async (req, res) => {
   const { url } = req.body
@@ -30,7 +30,7 @@ export const getScraping = async (req, res) => {
   try {
     // Aquí lanzas el navegador con `executablePath` para producción
     const browser = await puppeteer.launch({
-      cacheDirectory: isProduction ? cacheDirectory : undefined, // En producción usa el path, en desarrollo no
+      cacheDirectory: isProduction ? cacheDirectory : undefined,
       executablePath: isProduction ? executablePath : 'C:/Program Files/Google/Chrome/Application/chrome.exe',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
