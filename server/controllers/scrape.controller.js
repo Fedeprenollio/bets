@@ -6,23 +6,6 @@ import { fileURLToPath } from 'url' // Verifica si estás en producción
 // Crear la carpeta de caché si no existe
 import fs from 'fs'
 const isProduction = process.env.NODE_ENV === 'production'
-// Obtener el nombre y directorio del archivo actual
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-// Usar import.meta.url para construir la ruta
-const configPath = new URL('../../puppeteer.config.cjs', import.meta.url)
-console.log('configPath', configPath)
-const { cacheDirectory } = await import(configPath)
-console.log('cacheDirectory', cacheDirectory)
-
-// Crear la carpeta de caché si no existe
-if (!fs.existsSync(cacheDirectory)) {
-  fs.mkdirSync(cacheDirectory, { recursive: true })
-}
-// Obtener el path del ejecutable
-// const executablePath = config.executablePath
-const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH
 
 export const getScraping = async (req, res) => {
   const { url } = req.body
@@ -30,8 +13,6 @@ export const getScraping = async (req, res) => {
   try {
     // Aquí lanzas el navegador con `executablePath` para producción
     const browser = await puppeteer.launch({
-      cacheDirectory: isProduction ? cacheDirectory : undefined, // En producción usa el path, en desarrollo no
-      executablePath: isProduction ? executablePath : 'C:/Program Files/Google/Chrome/Application/chrome.exe',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
     // const browser = await puppeteer.launch()
@@ -46,7 +27,9 @@ export const getScraping = async (req, res) => {
 
     const found = await page.evaluate(() => {
       const elements = [...document.querySelectorAll('span.see-all-footer')]
-      const targetElements = elements.filter(el => el.innerText.trim() === 'Ver todo')
+      const targetElements = elements.filter(
+        (el) => el.innerText.trim() === 'Ver todo'
+      )
       if (targetElements.length > 1) {
         targetElements[1].click() // Hacer clic en el segundo elemento "Ver todo"
         return true
@@ -54,15 +37,15 @@ export const getScraping = async (req, res) => {
       return false
     })
 
-    await page.screenshot({ path: 'after_click.png' })
-
     if (!found) {
       console.log('No se encontró un span con el texto "Ver todo"')
-      return res.status(404).json({ error: 'No se encontró el botón "Ver todo"' })
+      return res
+        .status(404)
+        .json({ error: 'No se encontró el botón "Ver todo"' })
     }
 
     // Esperar a que se cargue el contenido después de hacer clic
-    await new Promise(resolve => setTimeout(resolve, 2000)) // Reemplazo de waitForTimeout
+    await new Promise((resolve) => setTimeout(resolve, 2000)) // Reemplazo de waitForTimeout
 
     // Obtener el HTML actualizado
     const content = await page.content()
@@ -72,21 +55,47 @@ export const getScraping = async (req, res) => {
     const $ = cheerio.load(content)
 
     // Seleccionar el div con la clase dinámica usando parte del nombre de la clase
-    const homeScore = $('div[class*="  game-score_competitor_score_container"]').first().text().trim()
-    const awayScore = $('div[class*="game-score_away_competitor_score_container"]').first().text().trim()
+    const homeScore = $('div[class*="  game-score_competitor_score_container"]')
+      .first()
+      .text()
+      .trim()
+    const awayScore = $(
+      'div[class*="game-score_away_competitor_score_container"]'
+    )
+      .first()
+      .text()
+      .trim()
 
     // Remates a Puerta
-    const shotsToGoalDiv = $('div.bar-chart-name-label:contains("Remates a Puerta")').parent()
-    const homeShotsToGoal = shotsToGoalDiv.find('div.bar-chart-label').first().text()
-    const awayShotsToGoal = shotsToGoalDiv.find('div.bar-chart-label').last().text()
+    const shotsToGoalDiv = $(
+      'div.bar-chart-name-label:contains("Remates a Puerta")'
+    ).parent()
+    const homeShotsToGoal = shotsToGoalDiv
+      .find('div.bar-chart-label')
+      .first()
+      .text()
+    const awayShotsToGoal = shotsToGoalDiv
+      .find('div.bar-chart-label')
+      .last()
+      .text()
 
     // Total Remates
-    const totalShotsDiv = $('div.bar-chart-name-label:contains("Total Remates")').parent()
-    const homeTotalShots = totalShotsDiv.find('div.bar-chart-label').first().text()
-    const awayTotalShots = totalShotsDiv.find('div.bar-chart-label').last().text()
+    const totalShotsDiv = $(
+      'div.bar-chart-name-label:contains("Total Remates")'
+    ).parent()
+    const homeTotalShots = totalShotsDiv
+      .find('div.bar-chart-label')
+      .first()
+      .text()
+    const awayTotalShots = totalShotsDiv
+      .find('div.bar-chart-label')
+      .last()
+      .text()
 
     // Saques de esquina
-    const cornerslDiv = $('div.bar-chart-name-label:contains("Saques de Esquina")').parent()
+    const cornerslDiv = $(
+      'div.bar-chart-name-label:contains("Saques de Esquina")'
+    ).parent()
     const homeCorners = cornerslDiv.find('div.bar-chart-label').first().text()
     const awayCorners = cornerslDiv.find('div.bar-chart-label').last().text()
 
@@ -96,18 +105,46 @@ export const getScraping = async (req, res) => {
     const awayFaults = faultsDiv.find('div.bar-chart-label').last().text()
 
     // Amarillas
-    const yellowCardDiv = $('div.bar-chart-name-label:contains("Tarjetas Amarillas")').parent()
-    const homeYellowCard = yellowCardDiv.find('div.bar-chart-label').first().text()
-    const awayYellowCard = yellowCardDiv.find('div.bar-chart-label').last().text()
+    const yellowCardDiv = $(
+      'div.bar-chart-name-label:contains("Tarjetas Amarillas")'
+    ).parent()
+    const homeYellowCard = yellowCardDiv
+      .find('div.bar-chart-label')
+      .first()
+      .text()
+    const awayYellowCard = yellowCardDiv
+      .find('div.bar-chart-label')
+      .last()
+      .text()
 
     // OffSide
-    const offsidesCardDiv = $('div.bar-chart-name-label:contains("Fueras de Juego")').parent()
-    const homeOffsides = offsidesCardDiv.find('div.bar-chart-label').first().text()
-    const awayOffsides = offsidesCardDiv.find('div.bar-chart-label').last().text()
+    const offsidesCardDiv = $(
+      'div.bar-chart-name-label:contains("Fueras de Juego")'
+    ).parent()
+    const homeOffsides = offsidesCardDiv
+      .find('div.bar-chart-label')
+      .first()
+      .text()
+    const awayOffsides = offsidesCardDiv
+      .find('div.bar-chart-label')
+      .last()
+      .text()
 
     // Seleccionar el div con la clase dinámica usando parte del nombre de la clase para la posesion
-    const homePossession = $('div[class*="game-stats-widget_competitor_pie_chart"]').first().text().trim().replace('%', '')
-    const awayPossession = $('div[class*="game-stats-widget_competitor_pie_chart"]').last().text().trim().replace('%', '')
+    const homePossession = $(
+      'div[class*="game-stats-widget_competitor_pie_chart"]'
+    )
+      .first()
+      .text()
+      .trim()
+      .replace('%', '')
+    const awayPossession = $(
+      'div[class*="game-stats-widget_competitor_pie_chart"]'
+    )
+      .last()
+      .text()
+      .trim()
+      .replace('%', '')
 
     console.log('Goles - Local:', homeScore)
     console.log('Goles - Visitante:', awayScore)
