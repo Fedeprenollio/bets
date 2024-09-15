@@ -6,12 +6,18 @@ import fs from 'fs'
 
 const isProduction = process.env.NODE_ENV === 'production'
 
+// Ruta del ejecutable en producción
+const executablePath = isProduction
+  ? '/opt/render/project/.cache/puppeteer/chrome' // Cambia esto a la ruta correcta de tu entorno
+  : 'C:/Program Files/Google/Chrome/Application/chrome.exe' // Ruta para desarrollo local
+
 export const getScraping = async (req, res) => {
   const { url } = req.body
 
   try {
     // Aquí lanzas el navegador con `executablePath` para producción
     const browser = await puppeteer.launch({
+      executablePath: isProduction ? executablePath : undefined, // Usar ruta en producción o predeterminada
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
     // const browser = await puppeteer.launch()
