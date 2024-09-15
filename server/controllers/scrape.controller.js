@@ -1,8 +1,28 @@
-import axios from 'axios'
 import * as cheerio from 'cheerio'
 import puppeteer from 'puppeteer'
-const isProduction = process.env.NODE_ENV === 'production' // Verifica si estás en producción
-const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined // Solo usa el path si está en producción
+import path from 'path'
+import { fileURLToPath } from 'url' // Verifica si estás en producción
+
+// Crear la carpeta de caché si no existe
+import fs from 'fs'
+const isProduction = process.env.NODE_ENV === 'production'
+// Obtener el nombre y directorio del archivo actual
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Usar import.meta.url para construir la ruta
+const configPath = new URL('../../puppeteer.config.cjs', import.meta.url)
+console.log('configPath', configPath)
+const { cacheDirectory } = await import(configPath)
+console.log('cacheDirectory', cacheDirectory)
+
+// Crear la carpeta de caché si no existe
+if (!fs.existsSync(cacheDirectory)) {
+  fs.mkdirSync(cacheDirectory, { recursive: true })
+}
+// Obtener el path del ejecutable
+// const executablePath = config.executablePath
+const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH
 
 export const getScraping = async (req, res) => {
   const { url } = req.body
@@ -10,7 +30,8 @@ export const getScraping = async (req, res) => {
   try {
     // Aquí lanzas el navegador con `executablePath` para producción
     const browser = await puppeteer.launch({
-      executablePath: isProduction ? executablePath : undefined, // En producción usa el path, en desarrollo no
+      cacheDirectory: isProduction ? cacheDirectory : undefined, // En producción usa el path, en desarrollo no
+      executablePath: isProduction ? executablePath : 'C:/Program Files/Google/Chrome/Application/chrome.exe',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
     // const browser = await puppeteer.launch()
