@@ -22,9 +22,9 @@ export const getScraping = async (req, res) => {
     const browser = await puppeteer.launch({
       args: [
         '--disable-setuid-sandbox',
-        '--no-sandbox',
-        '--single-process',
-        '--no-zygote'
+        '--no-sandbox'
+        // '--single-process',
+        // '--no-zygote'
       ],
       executablePath:
       process.env.NODE_ENV === 'production'
