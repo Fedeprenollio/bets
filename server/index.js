@@ -22,7 +22,7 @@ const PORT = process.env.PORT || 1234
 const app = express()
 
 const corsOptions = {
-  origin: ['http://localhost:5173', 'https://bet-reason.vercel.app', 'http://localhost:5174'], // Sin coma después del último elemento
+  origin: ['http://localhost:5173', 'https://bet-reason.vercel.app', 'http://localhost:5174', 'https://bets-1.onrender.com/scrape'], // Sin coma después del último elemento
   credentials: true // Habilita el envío de credenciales en las solicitudes CORS
 }
 // 'https://www.365scores.com'
