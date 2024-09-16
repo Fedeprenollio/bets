@@ -10,10 +10,10 @@ const isProduction = process.env.NODE_ENV === 'production'
 // const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH ||
 //   (isProduction ? '/opt/render/project/.cache/puppeteer/chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe')
 
-const executablePath = isProduction
+const executablePath = process.env.NODE_ENV === 'production'
   ? process.env.PUPPETEER_EXECUTABLE_PATH
   : puppeteer.executablePath()
-
+console.log('executablePath', executablePath)
 export const getScraping = async (req, res) => {
   const { url } = req.body
 
