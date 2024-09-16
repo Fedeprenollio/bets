@@ -1,4 +1,4 @@
-FROM ghcr.io/puppeteer/puppeteer:23.3.0
+FROM ghcr.io/puppeteer/puppeteer:19.7.2
 
 # Instalar Google Chrome
 USER root

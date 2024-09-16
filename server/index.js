@@ -28,7 +28,7 @@ const corsOptions = {
 // 'https://www.365scores.com'
 app.use(cors(corsOptions))
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE')
   next()
 })
 
