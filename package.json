@@ -4,15 +4,16 @@
   "description": "",
   "main": "index.js",
   "type": "module",
-  "scripts": {
-    "dev": "node --watch ./server/index.js",
-    "prod": "node ./server/index.js",
-    "ndm": "nodemon ./server/index.js",
-    "start": "node ./server/index.js",
-    "build": "npm run playwright-install && your-build-command",
-    "playwright-install": "npx playwright install",
+"scripts": {
+  "dev": "node --watch ./server/index.js",
+  "prod": "node ./server/index.js",
+  "ndm": "nodemon ./server/index.js",
+  "start": "node ./server/index.js",
+  "build": "npm run playwright-install",
+  "playwright-install": "npx playwright install",
   "prebuild": "npm run playwright-install"
-  },
+},
+
   "keywords": [],
   "author": "",
   "license": "ISC",
