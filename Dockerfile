@@ -24,16 +24,18 @@ RUN apt-get update && apt-get install -y \
     libpci3 \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/* && \
-    # Add Google's GPG key and repository
-    curl -sS https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg && \
+    # Eliminar cualquier duplicado en las listas
+    rm -f /etc/apt/sources.list.d/google.list && \
+    # Añadir la clave pública de Google
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg && \
+    # Añadir el repositorio de Google Chrome
     echo "deb [signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update && \
-    # Install Google Chrome
+    # Instalar Google Chrome
     curl -sS https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o /tmp/google-chrome-stable.deb && \
     apt-get install -y /tmp/google-chrome-stable.deb && \
     rm /tmp/google-chrome-stable.deb && \
     rm -rf /var/lib/apt/lists/*
-
 
 # Establecer variables de entorno para Puppeteer
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
