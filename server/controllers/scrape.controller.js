@@ -20,13 +20,13 @@ export const getScraping = async (req, res) => {
 
     const page = await browser.newPage()
 
-    // Intercepta las solicitudes para bloquear imágenes, fuentes y hojas de estilo
-    await page.setRequestInterception(true)
-    page.on('request', (request) => {
-      if (['image', 'stylesheet', 'font'].includes(request.resourceType())) {
-        request.abort()
+    // Interceptar solicitudes para bloquear imágenes, fuentes y hojas de estilo
+    await page.route('**/*', (route) => {
+      const resourceType = route.request().resourceType()
+      if (['image', 'stylesheet', 'font'].includes(resourceType)) {
+        route.abort() // Bloquear solicitudes de imágenes, fuentes y hojas de estilo
       } else {
-        request.continue()
+        route.continue() // Continuar con otras solicitudes
       }
     })
 
