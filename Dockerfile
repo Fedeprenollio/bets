@@ -3,33 +3,37 @@ FROM ghcr.io/puppeteer/puppeteer:19.7.2
 # Usuario root para poder instalar dependencias del sistema
 USER root
 
-# Instalar dependencias del sistema y Google Chrome estable
+# Install system dependencies and Google Chrome stable
 RUN apt-get update && apt-get install -y \
-  wget \
-  gnupg \
-  curl \
-  libnss3 \
-  libgdk-pixbuf2.0-0 \
-  libatk-bridge2.0-0 \
-  libatk1.0-0 \
-  libcups2 \
-  libxcomposite1 \
-  libxdamage1 \
-  libxrandr2 \
-  libxss1 \
-  libxtst6 \
-  libgbm1 \
-  libasound2 \
-  libxshmfence1 \
-  libpci3 \
-  --no-install-recommends && \
-  rm -rf /var/lib/apt/lists/* && \
-  curl -sS https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg && \
-  echo "deb [signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-  apt-get update && \
-  curl -sS https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o /tmp/google-chrome-stable.deb && \
-  apt-get install -y /tmp/google-chrome-stable.deb && \
-  rm /tmp/google-chrome-stable.deb
+    wget \
+    gnupg \
+    curl \
+    libnss3 \
+    libgdk-pixbuf2.0-0 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libxss1 \
+    libxtst6 \
+    libgbm1 \
+    libasound2 \
+    libxshmfence1 \
+    libpci3 \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/* && \
+    # Add Google's GPG key and repository
+    curl -sS https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    # Install Google Chrome
+    curl -sS https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o /tmp/google-chrome-stable.deb && \
+    apt-get install -y /tmp/google-chrome-stable.deb && \
+    rm /tmp/google-chrome-stable.deb && \
+    rm -rf /var/lib/apt/lists/*
+
 
 # Establecer variables de entorno para Puppeteer
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
