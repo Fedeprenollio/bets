@@ -1,5 +1,5 @@
 # Usa la imagen de Puppeteer basada en Node.js
-FROM ghcr.io/puppeteer/puppeteer:19.7.2
+FROM ghcr.io/puppeteer/puppeteer:23.3.1
 
 # Variables de entorno para saltar la descarga de Chromium y especificar el ejecutable
 # ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
