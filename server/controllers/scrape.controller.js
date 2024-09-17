@@ -238,7 +238,7 @@ export const getScraping = async (req, res) => {
     console.log('page is....', page)
     // Esperar y seleccionar el span con la clase 'see-all-footer' y texto 'Ver todo'
     const targetSelector = 'span.see-all-footer'
-    await page.waitForSelector(targetSelector)
+    await page.waitForSelector(targetSelector, { timeout: 60000 })
 
     const found = await page.evaluate(() => {
       const elements = [...document.querySelectorAll('span.see-all-footer')]
