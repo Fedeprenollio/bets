@@ -5,9 +5,6 @@ FROM ghcr.io/puppeteer/puppeteer:19.7.2
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Corregir permisos del directorio /var/lib/apt/lists
-RUN mkdir -p /var/lib/apt/lists/partial && chmod -R 755 /var/lib/apt/lists
-
 # Eliminar configuraciones duplicadas de repositorios
 RUN rm /etc/apt/sources.list.d/google-chrome.list
 
