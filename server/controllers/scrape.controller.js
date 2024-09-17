@@ -235,7 +235,7 @@ export const getScraping = async (req, res) => {
 
     const page = await browser.newPage()
     await page.goto(url, { waitUntil: 'networkidle' })
-
+    console.log('page is....', page)
     // Esperar y seleccionar el span con la clase 'see-all-footer' y texto 'Ver todo'
     const targetSelector = 'span.see-all-footer'
     await page.waitForSelector(targetSelector)
