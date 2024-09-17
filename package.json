@@ -10,7 +10,8 @@
     "ndm": "nodemon ./server/index.js",
     "start": "node ./server/index.js",
     "build": "npm run playwright-install && your-build-command",
-    "playwright-install": "npx playwright install"
+    "playwright-install": "npx playwright install",
+  "prebuild": "npm run playwright-install"
   },
   "keywords": [],
   "author": "",
