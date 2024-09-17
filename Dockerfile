@@ -1,9 +1,17 @@
+# Usa la imagen de Puppeteer basada en Node.js
 FROM ghcr.io/puppeteer/puppeteer:19.7.2
 
+# Variables de entorno para saltar la descarga de Chromium y especificar el ejecutable
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Instalar la versión correcta de Node.js y NPM
+# Corregir permisos del directorio /var/lib/apt/lists
+RUN mkdir -p /var/lib/apt/lists/partial && chmod -R 755 /var/lib/apt/lists
+
+# Eliminar configuraciones duplicadas de repositorios
+RUN rm /etc/apt/sources.list.d/google-chrome.list
+
+# Instalar Node.js y NPM
 RUN apt-get update && apt-get install -y curl \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
