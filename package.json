@@ -9,7 +9,7 @@
     "prod": "node ./server/index.js",
     "ndm": "nodemon ./server/index.js",
     "start": "node ./server/index.js",
-    "postinstall": "npx puppeteer install"
+     "postinstall": "node node_modules/puppeteer/install.js"
   },
   "keywords": [],
   "author": "",
