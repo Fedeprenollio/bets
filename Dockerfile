@@ -2,11 +2,11 @@
 FROM ghcr.io/puppeteer/puppeteer:19.7.2
 
 # Variables de entorno para saltar la descarga de Chromium y especificar el ejecutable
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+# ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+#     PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
 # Eliminar configuraciones duplicadas de repositorios
-RUN rm /etc/apt/sources.list.d/google-chrome.list
+# RUN rm /etc/apt/sources.list.d/google-chrome.list
 
 # Instalar Node.js y NPM
 RUN apt-get update && apt-get install -y curl \
