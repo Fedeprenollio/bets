@@ -242,7 +242,7 @@ export const getScraping = async (req, res) => {
 
     // Seleccionar las filas de la tabla
     const rows = $('tbody tr')
-    console.log('ROW', row)
+    console.log('ROW', rows)
     // Almacenar los datos de la tabla
     // Almacenar los datos de la tabla
     const data = {
