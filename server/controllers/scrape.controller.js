@@ -233,11 +233,16 @@ export const getScraping = async (req, res) => {
     const $ = cheerio.load(content)
 
     // Obtener el marcador desde el contenedor principal
-    const homeScore = $('div.imso_mh__ma-sc-cont > div.imso_mh__l-tm-sc').text().trim()
-    const awayScore = $('div.imso_mh__ma-sc-cont > div.imso_mh__r-tm-sc').text().trim()
+    // Usamos el selector más general para obtener los resultados por la estructura:
+    const scores = $('span.imso_mh__score > span')
+
+    // Verificamos que tengamos dos resultados para local y visitante
+    const homeScore = $(scores[0]).text().trim()
+    const awayScore = $(scores[1]).text().trim()
+
     // Seleccionar las filas de la tabla
     const rows = $('tbody tr')
-
+    console.log('ROW', row)
     // Almacenar los datos de la tabla
     // Almacenar los datos de la tabla
     const data = {
