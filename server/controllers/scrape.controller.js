@@ -23,7 +23,7 @@ export const getScraping = async (req, res) => {
     // Interceptar solicitudes para bloquear imágenes, fuentes y hojas de estilo
     await page.route('**/*', (route) => {
       const resourceType = route.request().resourceType()
-      if (['image', 'stylesheet', 'font'].includes(resourceType)) {
+      if (['image', 'stylesheet', 'font', 'png', 'jpg', 'jpeg'].includes(resourceType)) {
         route.abort() // Bloquear solicitudes de imágenes, fuentes y hojas de estilo
       } else {
         route.continue() // Continuar con otras solicitudes
@@ -34,19 +34,25 @@ export const getScraping = async (req, res) => {
     console.log('page is....', page)
     // Esperar y seleccionar el span con la clase 'see-all-footer' y texto 'Ver todo'
     const targetSelector = 'span.see-all-footer'
+
+    // Espera a que el selector esté disponible en el DOM
     await page.waitForSelector(targetSelector, { timeout: 60000 })
 
+    // Evalúa dentro del navegador si hay al menos dos elementos con ese selector
     const found = await page.evaluate(() => {
-      const elements = [...document.querySelectorAll('span.see-all-footer')]
-      const targetElements = elements.filter(
-        (el) => el.innerText.trim() === 'Ver todo'
-      )
-      if (targetElements.length > 1) {
-        targetElements[1].click() // Hacer clic en el segundo elemento "Ver todo"
+      const elements = document.querySelectorAll('span.see-all-footer')
+      if (elements.length > 1) {
+        elements[1].click() // Hacer clic en el segundo elemento "Ver todo"
         return true
       }
       return false
     })
+
+    if (!found) {
+      console.log('No se encontró un segundo span con el texto "Ver todo"')
+      await browser.close()
+      return res.status(404).json({ error: 'No se encontró el botón "Ver todo"' })
+    }
 
     if (!found) {
       console.log('No se encontró un span con el texto "Ver todo"')
