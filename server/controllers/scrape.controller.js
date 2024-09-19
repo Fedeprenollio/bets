@@ -247,45 +247,56 @@ export const getScraping = async (req, res) => {
 
     // Mapear cada fila a la estadística correspondiente
     rows.each((index, row) => {
-      const cells = $(row).find('td, th')
-      const localValue = $(cells[0]).text().trim()
-      const label = $(cells[1]).text().trim()
-      const awayValue = $(cells[2]).text().trim()
+      const cells = $(row).find('td, th') // Seleccionar columnas de cada fila
+      const homeValue = $(cells[0]).text().trim() // Columna para el equipo local
+      const statLabel = $(cells[1]).text().trim() // Columna central con el tipo de estadística
+      const awayValue = $(cells[2]).text().trim() // Columna para el equipo visitante
 
-      switch (label) {
+      switch (statLabel) {
         case 'Remates':
-          data.homeTotalShots = localValue
+          data.homeTotalShots = homeValue
           data.awayTotalShots = awayValue
           break
         case 'Remates al arco':
-          data.homeShotsToGoal = localValue
+          data.homeShotsToGoal = homeValue
           data.awayShotsToGoal = awayValue
           break
         case 'Posesión':
-          data.homePossession = localValue.replace('%', '')
+          data.homePossession = homeValue.replace('%', '')
           data.awayPossession = awayValue.replace('%', '')
           break
-        case 'Tiros de esquina':
-          data.homeCorners = localValue
-          data.awayCorners = awayValue
+        case 'Pases':
+          data.homePasses = homeValue
+          data.awayPasses = awayValue
+          break
+        case 'Precisión de los pases':
+          data.homePassAccuracy = homeValue.replace('%', '')
+          data.awayPassAccuracy = awayValue.replace('%', '')
           break
         case 'Faltas':
-          data.homeFaults = localValue
+          data.homeFaults = homeValue
           data.awayFaults = awayValue
           break
         case 'Tarjetas amarillas':
-          data.homeYellowCard = localValue
+          data.homeYellowCard = homeValue
           data.awayYellowCard = awayValue
           break
+        case 'Tarjetas rojas':
+          data.homeRedCard = homeValue
+          data.awayRedCard = awayValue
+          break
         case 'Posición adelantada':
-          data.homeOffsides = localValue
+          data.homeOffsides = homeValue
           data.awayOffsides = awayValue
+          break
+        case 'Tiros de esquina':
+          data.homeCorners = homeValue
+          data.awayCorners = awayValue
           break
         default:
           break
       }
     })
-
     console.log('Goles - Local:', data.homeScore)
     console.log('Goles - Visitante:', data.awayScore)
     console.log('Corners - Local:', data.homeCorners)
