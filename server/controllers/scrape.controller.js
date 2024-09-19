@@ -224,7 +224,8 @@ export const getScraping = async (req, res) => {
 
     const page = await browser.newPage()
     await page.goto(url, { waitUntil: 'networkidle' })
-
+    // Esperar a que los elementos del marcador estén disponibles
+    await page.waitForSelector('span.imso_mh__score > span')
     // Obtener el contenido de la página
     const content = await page.content()
     await browser.close()
