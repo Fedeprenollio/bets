@@ -223,6 +223,16 @@ export const getScraping = async (req, res) => {
     })
 
     const page = await browser.newPage()
+    // Interceptar solicitudes de red
+    await page.route('**/*', (route) => {
+      const resourceType = route.request().resourceType()
+      // Bloquear imágenes, CSS y fuentes
+      if (resourceType === 'image' || resourceType === 'stylesheet' || resourceType === 'font') {
+        route.abort()
+      } else {
+        route.continue()
+      }
+    })
     await page.goto(url, { waitUntil: 'networkidle' })
     // Esperar a que los elementos del marcador estén disponibles
     await page.waitForSelector('span.imso_mh__score > span', { timeout: 60000 })
