@@ -225,11 +225,11 @@ export const getScraping = async (req, res) => {
     const page = await browser.newPage()
     await page.goto(url, { waitUntil: 'networkidle' })
     // Esperar a que los elementos del marcador estén disponibles
-    await page.waitForSelector('span.imso_mh__score > span')
+    await page.waitForSelector('span.imso_mh__score > span', { timeout: 60000 })
     // await page.waitForSelector('tbody tr', { state: 'visible', timeout: 60000 })
 
     // Esperar a que se cargue la tabla con la clase específica
-    await page.waitForSelector('table.lr-imso-ss-wdt')
+    await page.waitForSelector('table.lr-imso-ss-wdt', { timeout: 60000 })
 
     // Extraer la tabla con la clase específica
 
