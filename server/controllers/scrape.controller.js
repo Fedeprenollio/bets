@@ -226,6 +226,72 @@ export const getScraping = async (req, res) => {
     await page.goto(url, { waitUntil: 'networkidle' })
     // Esperar a que los elementos del marcador estén disponibles
     await page.waitForSelector('span.imso_mh__score > span')
+    // await page.waitForSelector('tbody tr', { state: 'visible', timeout: 60000 })
+
+    // Esperar a que se cargue la tabla con la clase específica
+    await page.waitForSelector('table.lr-imso-ss-wdt')
+
+    // Extraer la tabla con la clase específica
+
+    // Extraer los datos necesarios de la tabla
+    const additionalData = await page.evaluate(() => {
+      const table = document.querySelector('table.lr-imso-ss-wdt')
+      const rows = table.querySelectorAll('tr')
+
+      // Mapear los valores a las estadísticas
+      const homeTotalShots = rows[1].querySelectorAll('td')[0].innerText
+      const awayTotalShots = rows[1].querySelectorAll('td')[1].innerText
+
+      const homeShotsToGoal = rows[2].querySelectorAll('td')[0].innerText
+      const awayShotsToGoal = rows[2].querySelectorAll('td')[1].innerText
+
+      const homePossession = rows[3].querySelectorAll('td')[0].innerText.replace('%', '')
+      const awayPossession = rows[3].querySelectorAll('td')[1].innerText.replace('%', '')
+
+      const homePasses = rows[4].querySelectorAll('td')[0].innerText
+      const awayPasses = rows[4].querySelectorAll('td')[1].innerText
+
+      const homeAccuracy = rows[5].querySelectorAll('td')[0].innerText
+      const awayAccuracy = rows[5].querySelectorAll('td')[1].innerText
+
+      const homeFaults = rows[6].querySelectorAll('td')[0].innerText
+      const awayFaults = rows[6].querySelectorAll('td')[1].innerText
+
+      const homeYellowCard = rows[7].querySelectorAll('td')[0].innerText
+      const awayYellowCard = rows[7].querySelectorAll('td')[1].innerText
+
+      const homeRedCard = rows[8].querySelectorAll('td')[0].innerText
+      const awayRedCard = rows[8].querySelectorAll('td')[1].innerText
+
+      const homeOffsides = rows[9].querySelectorAll('td')[0].innerText
+      const awayOffsides = rows[9].querySelectorAll('td')[1].innerText
+
+      const homeCorners = rows[10].querySelectorAll('td')[0].innerText
+      const awayCorners = rows[10].querySelectorAll('td')[1].innerText
+
+      return {
+        homeTotalShots,
+        awayTotalShots,
+        homeShotsToGoal,
+        awayShotsToGoal,
+        homePossession,
+        awayPossession,
+        homePasses,
+        awayPasses,
+        homeAccuracy,
+        awayAccuracy,
+        homeFaults,
+        awayFaults,
+        homeYellowCard,
+        awayYellowCard,
+        homeRedCard,
+        awayRedCard,
+        homeOffsides,
+        awayOffsides,
+        homeCorners,
+        awayCorners
+      }
+    })
     // Obtener el contenido de la página
     const content = await page.content()
     await browser.close()
@@ -240,69 +306,71 @@ export const getScraping = async (req, res) => {
     // Verificamos que tengamos dos resultados para local y visitante
     const homeScore = $(scores[0]).text().trim()
     const awayScore = $(scores[1]).text().trim()
+    // Esperar a que la tabla de estadísticas esté disponible
 
     // Seleccionar las filas de la tabla
-    const rows = $('tbody tr')
-    console.log('ROW', rows)
+    // const rows = $('tbody tr')
+    // console.log('ROW', rows)
     // Almacenar los datos de la tabla
     // Almacenar los datos de la tabla
     const data = {
       homeScore,
-      awayScore
+      awayScore,
+      ...additionalData // Combina los datos adicionales extraídos
     }
 
     // Mapear cada fila a la estadística correspondiente
-    rows.each((index, row) => {
-      const cells = $(row).find('td, th') // Seleccionar columnas de cada fila
-      const homeValue = $(cells[0]).text().trim() // Columna para el equipo local
-      const statLabel = $(cells[1]).text().trim() // Columna central con el tipo de estadística
-      const awayValue = $(cells[2]).text().trim() // Columna para el equipo visitante
+    // rows.each((index, row) => {
+    //   const cells = $(row).find('td, th') // Seleccionar columnas de cada fila
+    //   const homeValue = $(cells[0]).text().trim() // Columna para el equipo local
+    //   const statLabel = $(cells[1]).text().trim() // Columna central con el tipo de estadística
+    //   const awayValue = $(cells[2]).text().trim() // Columna para el equipo visitante
 
-      switch (statLabel) {
-        case 'Remates':
-          data.homeTotalShots = homeValue
-          data.awayTotalShots = awayValue
-          break
-        case 'Remates al arco':
-          data.homeShotsToGoal = homeValue
-          data.awayShotsToGoal = awayValue
-          break
-        case 'Posesión':
-          data.homePossession = homeValue.replace('%', '')
-          data.awayPossession = awayValue.replace('%', '')
-          break
-        case 'Pases':
-          data.homePasses = homeValue
-          data.awayPasses = awayValue
-          break
-        case 'Precisión de los pases':
-          data.homePassAccuracy = homeValue.replace('%', '')
-          data.awayPassAccuracy = awayValue.replace('%', '')
-          break
-        case 'Faltas':
-          data.homeFaults = homeValue
-          data.awayFaults = awayValue
-          break
-        case 'Tarjetas amarillas':
-          data.homeYellowCard = homeValue
-          data.awayYellowCard = awayValue
-          break
-        case 'Tarjetas rojas':
-          data.homeRedCard = homeValue
-          data.awayRedCard = awayValue
-          break
-        case 'Posición adelantada':
-          data.homeOffsides = homeValue
-          data.awayOffsides = awayValue
-          break
-        case 'Tiros de esquina':
-          data.homeCorners = homeValue
-          data.awayCorners = awayValue
-          break
-        default:
-          break
-      }
-    })
+    //   switch (statLabel) {
+    //     case 'Remates':
+    //       data.homeTotalShots = homeValue
+    //       data.awayTotalShots = awayValue
+    //       break
+    //     case 'Remates al arco':
+    //       data.homeShotsToGoal = homeValue
+    //       data.awayShotsToGoal = awayValue
+    //       break
+    //     case 'Posesión':
+    //       data.homePossession = homeValue.replace('%', '')
+    //       data.awayPossession = awayValue.replace('%', '')
+    //       break
+    //     case 'Pases':
+    //       data.homePasses = homeValue
+    //       data.awayPasses = awayValue
+    //       break
+    //     case 'Precisión de los pases':
+    //       data.homePassAccuracy = homeValue.replace('%', '')
+    //       data.awayPassAccuracy = awayValue.replace('%', '')
+    //       break
+    //     case 'Faltas':
+    //       data.homeFaults = homeValue
+    //       data.awayFaults = awayValue
+    //       break
+    //     case 'Tarjetas amarillas':
+    //       data.homeYellowCard = homeValue
+    //       data.awayYellowCard = awayValue
+    //       break
+    //     case 'Tarjetas rojas':
+    //       data.homeRedCard = homeValue
+    //       data.awayRedCard = awayValue
+    //       break
+    //     case 'Posición adelantada':
+    //       data.homeOffsides = homeValue
+    //       data.awayOffsides = awayValue
+    //       break
+    //     case 'Tiros de esquina':
+    //       data.homeCorners = homeValue
+    //       data.awayCorners = awayValue
+    //       break
+    //     default:
+    //       break
+    //   }
+    // })
     console.log('Goles - Local:', data.homeScore)
     console.log('Goles - Visitante:', data.awayScore)
     console.log('Corners - Local:', data.homeCorners)
