@@ -77,6 +77,9 @@ const matchSchema = new mongoose.Schema({
   referee: { // Campo para asociar el árbitro
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Referee' // Nombre del modelo del árbitro
+  },
+  urlScrape: {
+    type: String
   }
 
 })

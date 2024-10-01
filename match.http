@@ -1,0 +1,48 @@
+###Crear partido por scrape
+POST http://localhost:1234/season/66f9ff4b44d33d7638707365/matches/scrape
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoicHVjaG8iLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MjQ0NzYyMTgsImV4cCI6MTcyNTA4MTAxOH0.PRsR1f2W2XKsmXEsaotoB9skJNDWtic5g168dFWVdCQ
+
+
+        {   
+            "urlScrapeAllMatches":"https://www.google.com/search?sca_esv=d2ba6b5c7e3c259e&sca_upv=1&cs=0&sxsrf=ADLYWIJh7OYsbM3nz7GYbEPTvxATHk6tfQ:1727357045344&q=Primera+Divisi%C3%B3n&stick=H4sIAAAAAAAAAONgVuLUz9U3MMkoyDZ8xGjCLfDyxz1hKe1Ja05eY1Tl4grOyC93zSvJLKkUEudig7J4pbi5ELp4FrEKBhRl5qYWJSq4ZJZlFmce3pwHAJED4wNYAAAA&ved=2ahUKEwjMh9O42uCIAxW9l5UCHT4XNTsQr056BAgBEAk#cobssid=s&sie=lg;/g/11vkzkqhtc;2;/m/04hpk1;bs;hd;;;;2024-09-27T18:00:00Z",
+            "country":"Argentina",
+            "league":"664acc0681ee69cfdd0b0689",
+            "order": 17,
+            "round":"17",
+            "totalRounds":27,
+            "referee":"66cc157d8d341b845cc88eee",
+            "seasonYear": "66f9ff4b44d33d7638707365",
+            "div":"OcbAbf"        }
+
+
+### equipos
+GET http://localhost:1234/team/
+
+### Ligas
+GET http://localhost:1234/league/
+
+###Crear partido por scrape
+POST http://localhost:1234/season/66fb5f5e03418ab9f02c5c80/matches/scrape
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoicHVjaG8iLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MjQ0NzYyMTgsImV4cCI6MTcyNTA4MTAxOH0.PRsR1f2W2XKsmXEsaotoB9skJNDWtic5g168dFWVdCQ
+
+
+        {   
+            "urlScrapeAllMatches":"https://www.google.com/search?q=liga+chilena&oq=liga+chilena&gs_lcrp=EgZjaHJvbWUqEAgAEAAYgwEY4wIYsQMYgAQyEAgAEAAYgwEY4wIYsQMYgAQyDQgBEC4YgwEYsQMYgAQyBwgCEAAYgAQyBwgDEAAYgAQyBwgEEAAYgAQyBwgFEAAYgAQyBwgGEAAYgAQyBwgHEAAYgAQyBwgIEC4YgAQyBwgJEC4YgATSAQg2MDA4ajBqOagCALACAQ&sourceid=chrome&ie=UTF-8#wptab=si:ACC90nw9vMMdwL91whQ4n-NcljM143f3JvZl4TM_hvFSavH6DxhM68nwhpUpFrgEtIyxVqexrdwH9mpql3VkflsXToKZRwH3zzN67-5hv6yis3XPglEiMFGwTQ-aP5Uehbr6nKuzmGImNx0T5d70UOaYTeMlzrKExFUkcNoBC_rW-sLyS0O8uhU7tIqbTIxRNEP4s-g2jD8m",
+            "country":"Chile",
+            "league":"66fb5f4903418ab9f02c5c77",
+            "order": 27,
+            "round":"27",
+            "totalRounds":30,
+            "referee":"66cc157d8d341b845cc88eee",
+            "seasonYear": "66fc037eb498b1c3fffe58a8",
+            "div":"GdfbFc"          }
+
+
+### tabla de temporada
+GET http://localhost:1234/standings/season/66fb5f5e03418ab9f02c5c80
+
+
+### partidos
+GET http://localhost:1234/matchs

@@ -45,6 +45,9 @@ seasonRouter.get('/league/:leagueId', controllers.getSeasonsByLeagueId)
 // Ruta para agregar múltiples partidos a una temporada por su ID
 seasonRouter.post('/:seasonId/matches', controllers.addMatchesToSeason)
 
+// Ruta para agregar múltiples partidos a una temporada por su ID
+seasonRouter.post('/:seasonId/matches/scrape', controllers.addMatchesByScraping)
+
 // Ruta para agregar marcar la acutual temporada
 seasonRouter.put('/:leagueId/:seasonId/isCurrent', controllers.isCurrentSeason)
 

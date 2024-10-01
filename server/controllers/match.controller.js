@@ -14,7 +14,8 @@ import {
   calculateZoneStats
 } from './standings.controller.js'
 import { Referee } from '../../schemas/refereeSchema.js'
-
+import { scrapeMatchData } from '../services/scrape/scrape.js'
+import nodemailer from 'nodemailer'
 // Controlador para obtener todos los partidos con filtros opcionales
 const getAllMatches = async (req, res) => {
   try {
@@ -88,7 +89,8 @@ const createMatch = async (req, res) => {
       league,
       seasonYear,
       round,
-      country
+      country,
+      urlScrape
     } = req.body
 
     // Buscar los IDs de los equipos en la base de datos
@@ -109,7 +111,8 @@ const createMatch = async (req, res) => {
       country,
       league,
       seasonYear,
-      round
+      round,
+      urlScrape
     })
 
     // Guardar el partido
@@ -157,9 +160,222 @@ const createMatch = async (req, res) => {
   }
 }
 
+const createMatchesFromScrape = async (req, res) => {
+  try {
+    const { urlForScrapeAllMatches, seasonYear, round, country, league } = req.body
+
+    // Scrape los datos de todos los partidos usando la URL proporcionada
+    const scrapedMatches = await procesarJornada(urlForScrapeAllMatches)
+
+    if (!scrapedMatches || scrapedMatches.length === 0) {
+      return res.status(400).send('No se encontraron partidos en la URL proporcionada')
+    }
+
+    // Buscar la temporada correspondiente
+    const season = await Season.findOne({ year: seasonYear })
+
+    if (!season) {
+      return res.status(400).send('La temporada especificada no existe en la base de datos')
+    }
+
+    // Obtener o crear la fecha (round) para los partidos
+    let fecha = await Fecha.findOne({ number: round, season: seasonYear })
+
+    if (!fecha) {
+      fecha = new Fecha({ number: round, season: seasonYear })
+      await fecha.save()
+    }
+
+    const matchIds = []
+
+    // Procesar cada partido scrapeado
+    for (const matchData of scrapedMatches) {
+      const { homeTeamName, awayTeamName, date } = matchData
+
+      // Buscar los IDs de los equipos en la base de datos
+      const homeTeam = await Team.findOne({ name: homeTeamName })
+      const awayTeam = await Team.findOne({ name: awayTeamName })
+
+      if (!homeTeam || !awayTeam) {
+        console.error(`Error: Uno o ambos equipos (${homeTeamName} vs ${awayTeamName}) no existen en la base de datos`)
+        continue // Saltar este partido si no se encuentran los equipos
+      }
+
+      // Crear un nuevo partido con los IDs encontrados y los datos scrapeados
+      const match = new Match({
+        homeTeam: homeTeam._id,
+        awayTeam: awayTeam._id,
+        date,
+        country,
+        league,
+        seasonYear,
+        round,
+        urlScrape: urlForScrapeAllMatches
+      })
+
+      // Guardar el partido
+      await match.save()
+      matchIds.push(match._id)
+
+      // Agregar el partido a la fecha
+      fecha.matches.push(match._id)
+    }
+
+    await fecha.save()
+
+    // Asociar la fecha a la temporada
+    if (!season.fechas.includes(fecha._id)) {
+      season.fechas.push(fecha._id)
+      await season.save()
+    }
+
+    // Actualizar la lista de partidos en la liga correspondiente
+    const updatedLeague = await League.findByIdAndUpdate(
+      league,
+      { $push: { matches: { $each: matchIds } } },
+      { new: true }
+    )
+
+    res.status(201).send({
+      message: 'Partidos creados y asociados a la fecha y liga con éxito',
+      matchIds
+    })
+  } catch (error) {
+    console.error('Error creating matches from scrape:', error)
+    res.status(500).send('Ocurrió un error al crear los partidos desde el scraping')
+  }
+}
+
+// const updateMatchResult = async (req, res) => {
+//   try {
+//     const { goalsHome, goalsAway, teamStatistics, penaltyResult, refereeId,url } = req.body
+//     const matchId = req.params.id
+//     // Buscar el partido por ID
+//     // const match = await Match.findById(matchId).populate('referee').exec()
+//     const match = await Match.findById(matchId)
+
+//     if (!match) {
+//       return res.status(404).send('Partido no encontrado')
+//     }
+//     // Actualizar estadísticas del equipo local
+//     const updateTeamStats = (teamStats, stats) => {
+//       teamStats.goals = stats.goals
+//       teamStats.shots = stats.totalShots
+//       teamStats.shotsOnTarget = stats.shotsOnTarget
+//       teamStats.possession = stats.possession
+//       teamStats.offsides = stats.offsides
+//       teamStats.yellowCards = stats.yellowCards
+//       teamStats.corners = stats.corners
+//       teamStats.foults = stats.foults
+//       teamStats.redCards = stats.redCards
+//     }
+
+//     updateTeamStats(match.teamStatistics.local, teamStatistics.local)
+//     updateTeamStats(match.teamStatistics.visitor, teamStatistics.visitor)
+
+//     // Actualizar resultado del partido
+//     match.goalsHome = goalsHome
+//     match.goalsAway = goalsAway
+//     match.isFinished = true
+
+//     // Si se proporciona resultado de penales, actualizarlo
+//     if (penaltyResult) {
+//       match.penaltyResult = {
+//         homePenalties: penaltyResult.homePenalties || 0,
+//         awayPenalties: penaltyResult.awayPenalties || 0
+//       }
+//     }
+
+//     // Actualizar estadísticas del árbitro si se proporciona un ID de árbitro
+
+//     // Si se proporciona un nuevo ID de árbitro, actualizar el árbitro y el partido
+//     if (refereeId) {
+//       match.referee = refereeId
+
+//       const referee = await Referee.findById(refereeId)
+//       if (!referee) {
+//         return res.status(404).send('Árbitro no encontrado')
+//       }
+
+//       // Verificar si el partido ya está en el array de partidos arbitrados
+//       const matchIndex = referee.matchesOfficiated.findIndex(
+//         (m) => m.matchId.toString() === matchId
+//       )
+
+//       // Si el partido no está en el array, agregarlo
+//       if (matchIndex === -1) {
+//         referee.matchesOfficiated.push({
+//           matchId,
+//           homeTeam: match.homeTeam,
+//           awayTeam: match.awayTeam,
+//           date: match.date
+//         })
+//       }
+
+//       await referee.save()
+//     } else if (match.referee) {
+//       // Si no se proporciona un nuevo árbitro, pero el partido ya tiene un árbitro asignado
+//       const referee = await Referee.findById(match.referee)
+//       if (referee) {
+//         // Verificar si el partido ya está en el array de partidos arbitrados
+//         const matchIndex = referee.matchesOfficiated.findIndex(
+//           (m) => m.matchId.toString() === matchId
+//         )
+//         // Si el partido no está en el array, agregarlo
+//         if (matchIndex === -1) {
+//           referee.matchesOfficiated.push({
+//             matchId,
+//             homeTeam: match.homeTeam,
+//             awayTeam: match.awayTeam,
+//             date: match.date
+//           })
+//         }
+
+//         await referee.save()
+//       }
+//     }
+
+//     // Guardar el partido actualizado
+//     await match.save()
+//     const matchPopulated = await Match.findById(matchId).populate('referee')
+//     res.status(200).send(matchPopulated)
+//   } catch (error) {
+//     console.error('Error updating match result:', error)
+//     res.status(500).send('An error occurred while updating match result')
+//   }
+// }
+
+// https://walink.co/ba0469
+
+// Configuración del transporte de correo electrónico
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // O cualquier otro servicio de email que uses
+  auth: {
+    user: 'bet.reason.b@gmail.com', // Tu correo electrónico
+    pass: 'Scaloneta2024+' // Tu contraseña de correo
+  }
+})
+
+// Función para enviar el correo con el error del scraping
+const sendErrorEmail = (matchId, errorMessage) => {
+  const mailOptions = {
+    from: 'fede.preno@gmail.com',
+    to: 'bet.reason.b@gmail.com', // Correo electrónico del encargado
+    subject: `Error en el scraping del partido con ID: ${matchId}`,
+    text: `Se produjo un error en el scraping del partido con ID: ${matchId}.\n\nMensaje de error: ${errorMessage}.`
+  }
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.log('Error al enviar el correo:', error)
+    }
+    console.log('Correo enviado:', info.response)
+  })
+}
+
 const updateMatchResult = async (req, res) => {
   try {
-    const { goalsHome, goalsAway, teamStatistics, penaltyResult, refereeId } = req.body
+    const { goalsHome, goalsAway, teamStatistics, penaltyResult, refereeId, url } = req.body
     const matchId = req.params.id
     // Buscar el partido por ID
     // const match = await Match.findById(matchId).populate('referee').exec()
@@ -168,25 +384,67 @@ const updateMatchResult = async (req, res) => {
     if (!match) {
       return res.status(404).send('Partido no encontrado')
     }
-    // Actualizar estadísticas del equipo local
-    const updateTeamStats = (teamStats, stats) => {
-      teamStats.goals = stats.goals
-      teamStats.shots = stats.totalShots
-      teamStats.shotsOnTarget = stats.shotsOnTarget
-      teamStats.possession = stats.possession
-      teamStats.offsides = stats.offsides
-      teamStats.yellowCards = stats.yellowCards
-      teamStats.corners = stats.corners
-      teamStats.foults = stats.foults
-      teamStats.redCards = stats.redCards
+    let scrapedData = {}
+
+    if (url) {
+      try {
+        scrapedData = await scrapeMatchData(url)
+        sendErrorEmail(matchId, 'scrapeError.message')
+      } catch (scrapeError) {
+        sendErrorEmail(matchId, scrapeError.message)
+      }
+    }
+    console.log('scrapedData', scrapedData)
+
+    // Function to map scraped data or teamStatistics to match stats
+    const updateTeamStats = (teamStats, sourceStats) => {
+      teamStats.goals = sourceStats.goals || teamStats.goals
+      teamStats.shots = sourceStats.totalShots || teamStats.shots
+      teamStats.shotsOnTarget = sourceStats.shotsOnTarget || teamStats.shotsOnTarget
+      teamStats.possession = sourceStats.possession || teamStats.possession
+      teamStats.offsides = sourceStats.offsides || teamStats.offsides
+      teamStats.yellowCards = sourceStats.yellowCards || teamStats.yellowCards
+      teamStats.redCards = sourceStats.redCards || teamStats.redCards
+      teamStats.corners = sourceStats.corners || teamStats.corners
+      teamStats.foults = sourceStats.foults || teamStats.foults
     }
 
-    updateTeamStats(match.teamStatistics.local, teamStatistics.local)
-    updateTeamStats(match.teamStatistics.visitor, teamStatistics.visitor)
+    // Si se scrapean datos, utilizarlos; si no, usar teamStatistics del body
+    const localStats = url
+      ? {
+          goals: scrapedData.homeScore,
+          totalShots: scrapedData.homeTotalShots,
+          shotsOnTarget: scrapedData.homeShotsToGoal,
+          possession: scrapedData.homePossession,
+          offsides: scrapedData.homeOffsides,
+          yellowCards: scrapedData.homeYellowCard,
+          redCards: scrapedData.homeRedCard,
+          corners: scrapedData.homeCorners,
+          foults: scrapedData.homeFaults
+        }
+      : (teamStatistics.local || {})
+
+    const visitorStats = url
+      ? {
+          goals: scrapedData.awayScore,
+          totalShots: scrapedData.awayTotalShots,
+          shotsOnTarget: scrapedData.awayShotsToGoal,
+          possession: scrapedData.awayPossession,
+          offsides: scrapedData.awayOffsides,
+          yellowCards: scrapedData.awayYellowCard,
+          redCards: scrapedData.awayRedCard,
+          corners: scrapedData.awayCorners,
+          foults: scrapedData.awayFaults
+        }
+      : (teamStatistics.visitor || {})
+
+    // Actualizar estadísticas del equipo local y visitante
+    updateTeamStats(match.teamStatistics.local, localStats)
+    updateTeamStats(match.teamStatistics.visitor, visitorStats)
 
     // Actualizar resultado del partido
-    match.goalsHome = goalsHome
-    match.goalsAway = goalsAway
+    match.goalsHome = scrapedData.homeScore || goalsHome
+    match.goalsAway = scrapedData.awayScore || goalsAway
     match.isFinished = true
 
     // Si se proporciona resultado de penales, actualizarlo
@@ -2332,7 +2590,8 @@ const updateMatchById = async (req, res) => {
       goalsHome,
       goalsAway,
       isFinished,
-      referee
+      referee,
+      urlScrape
     } = req.body
     console.log('req.body', req.body)
 
@@ -2347,7 +2606,8 @@ const updateMatchById = async (req, res) => {
       country,
       goalsHome,
       goalsAway,
-      isFinished
+      isFinished,
+      urlScrape
     }
     // Si se proporciona un referee y no está vacío, lo añadimos al objeto de actualización
     if (referee && referee !== '') {
@@ -3380,5 +3640,6 @@ export const methods = {
   // getTeamStatsForTwoTeam,
   getAllTeamsStats,
   getTeamStatsNew,
-  getTeamStatsForSingleTeam
+  getTeamStatsForSingleTeam,
+  createMatchesFromScrape
 }

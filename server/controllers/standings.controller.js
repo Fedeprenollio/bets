@@ -101,19 +101,22 @@ const tieBreaker = (teamA, teamB, country, matches) => {
 
 export const calculateStats = (matches, country) => {
   console.log('matchesSS', matches)
+
   const teamStatsMap = {}
 
   matches.forEach((match) => {
     const { homeTeam, awayTeam, teamStatistics, round } = match
     const homeGoals = teamStatistics.local.goals
     const awayGoals = teamStatistics.visitor.goals
+    console.log('homeTeammmm', round)
 
     const isPlayoff = isNaN(round)
-    console.log('isPlayoff', isPlayoff)
     // Si es un partido de playoff, salta el procesamiento de este partido
+    console.log('isPlayoff', isPlayoff)
     if (isPlayoff) return
 
     const updateTeamStats = (team, goalsFor, goalsAgainst, isHome) => {
+      console.log('EL EQUIPO', teamStatsMap[team._id])
       if (!teamStatsMap[team._id]) {
         teamStatsMap[team._id] = {
           team,
@@ -151,6 +154,7 @@ export const calculateStats = (matches, country) => {
       }
 
       const stats = teamStatsMap[team._id]
+      console.log('stats.......+', stats)
 
       stats.allStats.matchesPlayed++
       if (isHome) {
@@ -226,7 +230,6 @@ const getStandingsBySeason = async (req, res) => {
   try {
     const { seasonId } = req.params
     const allMatches = await Match.find({ seasonYear: seasonId, isFinished: true }).populate('homeTeam').populate('awayTeam')
-    console.log('YESSSS', allMatches)
     const season = await Season.findById(seasonId).populate('zones').populate('league')
     const leagueId = season.league
     const league = await League.findById(leagueId)
@@ -236,6 +239,7 @@ const getStandingsBySeason = async (req, res) => {
     }
 
     const allStats = calculateStats(allMatches, league.country)
+    console.log('allStats', allStats)
     const populatedStandings = allStats.map((teamData) => ({
       team: teamData.team,
       allStats: teamData.allStats,

@@ -126,14 +126,35 @@ teamRouter.get('/:id/leagues-seasons', async (req, res) => {
   }
 })
 
+// teamRouter.put('/:id', async (req, res) => {
+//   const { id } = req.params
+//   const { name, country, logo } = req.body
+
+//   try {
+//     const updatedTeam = await Team.findByIdAndUpdate(
+//       id,
+//       { name, country, logo },
+//       { new: true }
+//     )
+
+//     if (!updatedTeam) {
+//       return res.status(404).json({ message: 'Equipo no encontrado' })
+//     }
+
+//     res.status(200).json(updatedTeam)
+//   } catch (error) {
+//     console.error('Error al actualizar el equipo:', error)
+//     res.status(500).json({ message: 'Error al actualizar el equipo' })
+//   }
+// })
 teamRouter.put('/:id', async (req, res) => {
   const { id } = req.params
-  const { name, country, logo } = req.body
+  const { name, country, logo, alternateCode } = req.body // Añadimos alternateCode al body
 
   try {
     const updatedTeam = await Team.findByIdAndUpdate(
       id,
-      { name, country, logo },
+      { name, country, logo, alternateCode }, // Incluimos alternateCode en los datos a actualizar
       { new: true }
     )
 

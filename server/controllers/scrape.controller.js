@@ -118,22 +118,22 @@ export const getScraping = async (req, res) => {
       ...additionalData // Combina los datos adicionales extraídos
     }
 
-    // console.log('Goles - Local:', data.homeScore)
-    // console.log('Goles - Visitante:', data.awayScore)
-    // console.log('Corners - Local:', data.homeCorners)
-    // console.log('Corners - Visitante:', data.awayCorners)
-    // console.log('Remates a Puerta - Local:', data.homeShotsToGoal)
-    // console.log('Remates a Puerta - Visitante:', data.awayShotsToGoal)
-    // console.log('Total Remates - Local:', data.homeTotalShots)
-    // console.log('Total Remates - Visitante:', data.awayTotalShots)
-    // console.log('Faltas - Local:', data.homeFaults)
-    // console.log('Faltas - Visitante:', data.awayFaults)
-    // console.log('Amarillas - Local:', data.homeYellowCard)
-    // console.log('Amarillas - Visitante:', data.awayYellowCard)
-    // console.log('Offsides - Local:', data.homeOffsides)
-    // console.log('Offsides - Visitante:', data.awayOffsides)
-    // console.log('posesion - Local:', data.homePossession)
-    // console.log('posesion - Visitante:', data.awayPossession)
+    console.log('Goles - Local:', data.homeScore)
+    console.log('Goles - Visitante:', data.awayScore)
+    console.log('Corners - Local:', data.homeCorners)
+    console.log('Corners - Visitante:', data.awayCorners)
+    console.log('Remates a Puerta - Local:', data.homeShotsToGoal)
+    console.log('Remates a Puerta - Visitante:', data.awayShotsToGoal)
+    console.log('Total Remates - Local:', data.homeTotalShots)
+    console.log('Total Remates - Visitante:', data.awayTotalShots)
+    console.log('Faltas - Local:', data.homeFaults)
+    console.log('Faltas - Visitante:', data.awayFaults)
+    console.log('Amarillas - Local:', data.homeYellowCard)
+    console.log('Amarillas - Visitante:', data.awayYellowCard)
+    console.log('Offsides - Local:', data.homeOffsides)
+    console.log('Offsides - Visitante:', data.awayOffsides)
+    console.log('posesion - Local:', data.homePossession)
+    console.log('posesion - Visitante:', data.awayPossession)
     // Enviar los datos finales
     res.json({
       status: 'ok',
@@ -161,4 +161,71 @@ export const getScraping = async (req, res) => {
       message: error.message
     })
   }
+}
+
+export const getScrapeAllMatchesOfTheDay = async (req, res) => {
+  const { date } = req.query // Obtener la fecha desde la consulta
+  const browser = await chromium.launch()
+  const page = await browser.newPage()
+
+  try {
+    // Asegúrate de que la URL incluya la fecha
+    const url = `http://localhost:5173/match?date=${date}`
+    await page.goto(url, { waitUntil: 'networkidle' })
+
+    // Selecciona los elementos que contienen los datos de los partidos
+    await page.waitForSelector('.MuiGrid-root a.link-no-underline')
+
+    const matches = await page.$$eval('.MuiGrid-root a.link-no-underline', (elements) => {
+      return elements
+        .map((element) => {
+          // Asegúrate de que el elemento tenga una propiedad href
+          if (element.href) {
+            const matchId = element.href.split('/').pop() // Obtener el ID del partido de la URL
+            return { matchId } // Solo devuelve el ID
+          }
+          return null // Retornar null si no hay href
+        })
+        .filter(Boolean) // Filtrar los elementos null
+    })
+
+    console.log('PARTIDOS', matches)
+    // Ahora actualiza los resultados de cada partido
+    for (const match of matches) {
+      const updateResponse = await updateMatchResult(match)
+      console.log('Updated match result:', updateResponse)
+    }
+
+    // Retorna la respuesta con los datos de los partidos
+    res.json({ success: true, matches })
+  } catch (error) {
+    console.error('Error durante el scraping:', error)
+    res.status(500).json({ success: false, message: 'Error al obtener los datos.' })
+  } finally {
+    await browser.close()
+  }
+}
+
+// Función para actualizar el resultado del partido
+const updateMatchResult = async ({ matchId, score }) => {
+  console.log('ACTUALIANDO')
+  // const [goalsHome, goalsAway] = score.split('-').map(Number) // Asumiendo que el formato de score es '1-2'
+
+  // try {
+  //   const response = await fetch(`http://localhost:3000/api/match/${matchId}/update`, { // Ajusta la URL según sea necesario
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json'
+  //     },
+  //     body: JSON.stringify({
+  //       goalsHome,
+  //       goalsAway
+  //       // Otros datos que necesites...
+  //     })
+  //   })
+
+  //   return response.json() // Devuelve la respuesta de la API
+  // } catch (error) {
+  //   console.error('Error updating match result:', error)
+  // }
 }

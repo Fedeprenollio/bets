@@ -9,6 +9,8 @@ matchRouter.get('/team/:idTeam', matchController.getMatchesByTeamId)
 matchRouter.get('/statsAc/:idTeam', matchController.getTeamStats)
 matchRouter.get('/', matchController.getAllMatches)
 matchRouter.post('/', verifyToken, matchController.createMatch)
+matchRouter.post('/scrape', verifyToken, matchController.createMatchesFromScrape)
+
 matchRouter.put('/:id/result', verifyToken, matchController.updateMatchResult)
 matchRouter.get('/:id', matchController.getMatchById)
 

@@ -10,6 +10,11 @@ const teamSchema = new mongoose.Schema({
   logo: {
     type: String, // URL de la imagen del escudo del club
     required: false
+  },
+  alternateCode: {
+    type: String, // Código alternativo para el equipo (teamCode del scraping)
+    required: false,
+    unique: true // Opcional: si deseas que este campo sea único
   }
 
 })
