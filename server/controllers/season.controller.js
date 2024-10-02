@@ -695,15 +695,14 @@ const addMatchesByScraping = async (req, res) => {
     const matches = await scrapeMatches(urlScrapeAllMatches, round, totalRounds, div)
     console.log('matches scrape', matches)
     if (!matches || matches.length === 0) {
-      return res.status(400).json({ message: 'No se pudieron obtener los partidos mediante scraping' })
+      return res.status(400).json({ status: false, message: 'No se pudieron obtener los partidos mediante scraping' })
     }
 
     // Obtener la temporada por el año
     const season = await Season.findById(seasonId).populate('zones')
     if (!season) {
-      return res.status(404).json({ message: 'Temporada no encontrada' })
+      return res.status(404).json({ status: false, message: 'Temporada no encontrada' })
     }
-    console.log('LA SEASON', season)
     // Obtener los teamCodes de los partidos scrapeados
     const homeTeamCodes = matches.map((match) => match.team1.teamCode)
     const awayTeamCodes = matches.map((match) => match.team2.teamCode)
@@ -711,7 +710,6 @@ const addMatchesByScraping = async (req, res) => {
 
     // Buscar equipos en la base de datos usando los teamCodes
     const teamsInDb = await Team.find({ alternateCode: { $in: allTeamCodes } })
-    console.log('teamsInDb', teamsInDb)
     // Crear un mapa de teamCode a team ID para facilitar la búsqueda
     const teamMap = {}
     teamsInDb.forEach((team) => {
@@ -729,7 +727,6 @@ const addMatchesByScraping = async (req, res) => {
     // if (!teamsInMatches) {
     //   return res.status(400).json({ message: 'Algunos equipos de los partidos no están en la temporada' })
     // }
-    console.log('teamMap', teamMap)
     // Crear y asociar los partidos
     const populatedMatches = []
     for (const matchData of matches) {
@@ -815,7 +812,7 @@ const addMatchesByScraping = async (req, res) => {
     res.status(201).json({ populatedMatches, state: 'ok' })
   } catch (error) {
     console.error('Error al crear partidos mediante scraping:', error)
-    res.status(500).json({ message: 'Error al crear partidos mediante scraping' })
+    res.status(500).json({ status: false, message: `Error al crear partidos mediante scraping, Error: ${error.message}`, error: error.message })
   }
 }
 

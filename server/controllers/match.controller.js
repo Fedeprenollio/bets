@@ -376,7 +376,6 @@ const sendErrorEmail = (matchId, errorMessage) => {
 const updateMatchResult = async (req, res) => {
   try {
     const { goalsHome, goalsAway, teamStatistics, penaltyResult, refereeId, url } = req.body
-    console.log('req.body', req.body)
     const matchId = req.params.id
     // Buscar el partido por ID
     // const match = await Match.findById(matchId).populate('referee').exec()
