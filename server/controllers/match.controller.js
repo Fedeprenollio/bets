@@ -376,6 +376,7 @@ const sendErrorEmail = (matchId, errorMessage) => {
 const updateMatchResult = async (req, res) => {
   try {
     const { goalsHome, goalsAway, teamStatistics, penaltyResult, refereeId, url } = req.body
+    console.log('req.body', req.body)
     const matchId = req.params.id
     // Buscar el partido por ID
     // const match = await Match.findById(matchId).populate('referee').exec()
@@ -389,24 +390,27 @@ const updateMatchResult = async (req, res) => {
     if (url) {
       try {
         scrapedData = await scrapeMatchData(url)
-        sendErrorEmail(matchId, 'scrapeError.message')
+        // sendErrorEmail(matchId, 'scrapeError.message')
       } catch (scrapeError) {
-        sendErrorEmail(matchId, scrapeError.message)
+        // sendErrorEmail(matchId, scrapeError.message)
+        console.log('ERROR')
+        return
       }
     }
     console.log('scrapedData', scrapedData)
 
     // Function to map scraped data or teamStatistics to match stats
     const updateTeamStats = (teamStats, sourceStats) => {
-      teamStats.goals = sourceStats.goals || teamStats.goals
-      teamStats.shots = sourceStats.totalShots || teamStats.shots
-      teamStats.shotsOnTarget = sourceStats.shotsOnTarget || teamStats.shotsOnTarget
-      teamStats.possession = sourceStats.possession || teamStats.possession
-      teamStats.offsides = sourceStats.offsides || teamStats.offsides
-      teamStats.yellowCards = sourceStats.yellowCards || teamStats.yellowCards
-      teamStats.redCards = sourceStats.redCards || teamStats.redCards
-      teamStats.corners = sourceStats.corners || teamStats.corners
-      teamStats.foults = sourceStats.foults || teamStats.foults
+      // Check if the source value is not undefined before assigning, allowing 0 to be assigned
+      teamStats.goals = sourceStats.goals !== undefined ? sourceStats.goals : teamStats.goals
+      teamStats.shots = sourceStats.totalShots !== undefined ? sourceStats.totalShots : teamStats.shots
+      teamStats.shotsOnTarget = sourceStats.shotsOnTarget !== undefined ? sourceStats.shotsOnTarget : teamStats.shotsOnTarget
+      teamStats.possession = sourceStats.possession !== undefined ? sourceStats.possession : teamStats.possession
+      teamStats.offsides = sourceStats.offsides !== undefined ? sourceStats.offsides : teamStats.offsides
+      teamStats.yellowCards = sourceStats.yellowCards !== undefined ? sourceStats.yellowCards : teamStats.yellowCards
+      teamStats.redCards = sourceStats.redCards !== undefined ? sourceStats.redCards : teamStats.redCards
+      teamStats.corners = sourceStats.corners !== undefined ? sourceStats.corners : teamStats.corners
+      teamStats.foults = sourceStats.foults !== undefined ? sourceStats.foults : teamStats.foults
     }
 
     // Si se scrapean datos, utilizarlos; si no, usar teamStatistics del body
@@ -506,7 +510,7 @@ const updateMatchResult = async (req, res) => {
 
     // Guardar el partido actualizado
     await match.save()
-    const matchPopulated = await Match.findById(matchId).populate('referee')
+    const matchPopulated = await Match.findById(matchId).populate('awayTeam').populate('homeTeam').populate('referee')
     res.status(200).send(matchPopulated)
   } catch (error) {
     console.error('Error updating match result:', error)
