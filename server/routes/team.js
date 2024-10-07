@@ -8,8 +8,10 @@ import { methods } from '../controllers/match.controller.js'
 export const teamRouter = Router()
 
 teamRouter.post('/', verifyToken, async (req, res) => {
+  console.log('EL BODY', req.body)
   try {
     const team = await new Team(req.body)
+    console.log('NUEVO EQUIPO', team)
     await team.save()
     res.status(201).send(team)
   } catch (error) {
