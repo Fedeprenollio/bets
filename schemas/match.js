@@ -80,6 +80,9 @@ const matchSchema = new mongoose.Schema({
   },
   urlScrape: {
     type: String
+  },
+  status: {
+    type: String
   }
 
 })

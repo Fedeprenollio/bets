@@ -447,7 +447,9 @@ const addMatchesToSeason = async (req, res) => {
       )
     })
     if (!teamsInMatches) {
-      return res.status(400).json({ message: 'Some teams in matches are not in the season' })
+      return res
+        .status(400)
+        .json({ message: 'Some teams in matches are not in the season' })
     }
 
     // Iterar sobre los partidos y asociarlos a las "Fechas" (rondas)
@@ -601,8 +603,18 @@ const addMatchesToSeason = async (req, res) => {
 //   return matches
 // }
 
-const scrapeMatches = async (url, jornada, totalJornadas, div) => {
-  const browser = await chromium.launch()
+const scrapeMatches = async (
+  url,
+  jornada,
+  totalJornadas,
+  div,
+  maxScrollAttempts = 3,
+  scrollDirection = 'up'
+) => {
+  // const browser = await chromium.launch()
+  // const browser = await chromium.launch({ headless: false })
+  const browser = await chromium.launch({ headless: false, slowMo: 500 })
+
   const page = await browser.newPage()
 
   await page.goto(url)
@@ -613,24 +625,91 @@ const scrapeMatches = async (url, jornada, totalJornadas, div) => {
   await page.waitForSelector(`.${div}`)
 
   // Buscamos todos los div que contengan el texto de la jornada
-  const jornadaDivs = await page.locator(`div.${div}`, {
+  let jornadaDivs = await page.locator(`div.${div}`, {
     hasText: jornadaText
   })
 
-  if (await jornadaDivs.count() === 0) {
-    console.log('ERROR: No se encontró ningún div con la jornada especificada')
+  // let attempt = 0
+
+  // while (await jornadaDivs.count() === 0 && attempt < maxScrollAttempts) {
+  //   console.log(`Intento ${attempt + 1}: No se encontró el div con la jornada especificada. Haciendo scroll...`)
+
+  //   // Hacer scroll hacia abajo
+  //   await page.evaluate(() => window.scrollBy(0, window.innerHeight))
+  //   await page.waitForTimeout(1000) // Pequeña pausa para permitir que la página cargue
+
+  //   // Hacer scroll hacia arriba
+  //   await page.evaluate(() => window.scrollBy(0, -window.innerHeight))
+  //   await page.waitForTimeout(1000)
+
+  //   // Volver a intentar buscar el div
+  //   jornadaDivs = await page.locator(`div.${div}`, {
+  //     hasText: jornadaText
+  //   })
+
+  //   attempt++
+  // }
+
+  let attempt = 0
+
+  // Definir comportamiento del scroll
+  const pressKey = async (direction) => {
+    if (direction === 'down') {
+      await page.keyboard.press('End') // Presionar la tecla 'End'
+    } else if (direction === 'up') {
+      // await page.keyboard.press('Home') // Presionar la tecla 'Home'
+      await page.waitForTimeout(3000) // Espera 1 segundo (opcional, ajustable)
+
+      await page.keyboard.down('Home') // Presiona la tecla "Inicio"
+      await page.waitForTimeout(1000) // Espera 1 segundo (opcional, ajustable)
+      await page.keyboard.up('Home') // Suelta la tecla "Inicio"
+    }
+    await page.waitForTimeout(2000) // Esperar un poco después de la pulsación
+  }
+
+  while ((await jornadaDivs.count()) === 0 && attempt < maxScrollAttempts) {
+    console.log(
+      `Intento ${
+        attempt + 1
+      }: No se encontró el div con la jornada especificada. Pulsando tecla ${
+        scrollDirection === 'down' ? 'Fin' : 'Inicio'
+      }...`
+    )
+
+    // Hacer scroll hacia abajo o arriba
+    await pressKey(scrollDirection)
+
+    // Volver a intentar buscar el div
+    jornadaDivs = await page.locator(`div.${div}`, {
+      hasText: jornadaText
+    })
+
+    attempt++
+  }
+  if ((await jornadaDivs.count()) === 0) {
+    console.log(
+      'ERROR: No se encontró ningún div con la jornada especificada después de varios intentos'
+    )
+    // await browser.close()
     return
   }
+
+  // if (await jornadaDivs.count() === 0) {
+  //   console.log(`ERROR: No se encontró ningún div con la jornada especificada:${jornadaText} `)
+  //   return
+  // }
 
   const matches = []
 
   // Iteramos sobre cada div que coincide con el texto de la jornada
-  for (let j = 0; j < await jornadaDivs.count(); j++) {
+  for (let j = 0; j < (await jornadaDivs.count()); j++) {
     const jornadaDiv = jornadaDivs.nth(j)
 
-    const table = await jornadaDiv.locator('table.liveresults-sports-immersive__match-grid')
+    const table = await jornadaDiv.locator(
+      'table.liveresults-sports-immersive__match-grid'
+    )
 
-    if (await table.count() === 0) {
+    if ((await table.count()) === 0) {
       console.log(`ERROR: No se encontró la tabla en el div #${j + 1}`)
       continue // Si no se encuentra la tabla en este div, pasamos al siguiente
     }
@@ -638,26 +717,41 @@ const scrapeMatches = async (url, jornada, totalJornadas, div) => {
     console.log(`Tabla encontrada en el div #${j + 1}`)
 
     // Esperamos a que todas las filas sean visibles
-    await page.waitForSelector('table.liveresults-sports-immersive__match-grid tbody tr')
+    await page.waitForSelector(
+      'table.liveresults-sports-immersive__match-grid tbody tr'
+    )
 
     const rows = await table.locator('tbody > tr.L5Kkcd')
 
-    console.log(`Total de filas encontradas en el div #${j + 1}: ${await rows.count()}`)
+    console.log(
+      `Total de filas encontradas en el div #${j + 1}: ${await rows.count()}`
+    )
 
     let teamBuffer = []
 
-    for (let i = 0; i < await rows.count(); i++) {
+    for (let i = 0; i < (await rows.count()); i++) {
       const row = rows.nth(i)
       const tds = await row.locator('td')
 
       // SUBIR al div padre desde el tr y obtener el atributo 'data-df-match-mid' y 'data-start-time'
-      const matchCodeDiv = await row.locator('..').locator('..').locator('..').locator('..').locator('..')
+      const matchCodeDiv = await row
+        .locator('..')
+        .locator('..')
+        .locator('..')
+        .locator('..')
+        .locator('..')
       const matchCode = await matchCodeDiv.getAttribute('data-df-match-mid')
       const matchDate = await matchCodeDiv.getAttribute('data-start-time')
 
-      if (await tds.count() > 0) {
-        const teamName = await tds.nth(1).locator('div.liveresults-sports-immersive__hide-element').innerText()
-        const teamCode = await tds.nth(1).locator('div.ellipsisize').getAttribute('data-df-team-mid')
+      if ((await tds.count()) > 0) {
+        const teamName = await tds
+          .nth(1)
+          .locator('div.liveresults-sports-immersive__hide-element')
+          .innerText()
+        const teamCode = await tds
+          .nth(1)
+          .locator('div.ellipsisize')
+          .getAttribute('data-df-team-mid')
 
         // Almacenar los nombres de los equipos temporalmente en un buffer
         teamBuffer.push({ teamName, teamCode, matchCode, matchDate })
@@ -679,29 +773,51 @@ const scrapeMatches = async (url, jornada, totalJornadas, div) => {
     }
   }
 
-  await browser.close()
+  // await browser.close()
   return matches
 }
 
 const addMatchesByScraping = async (req, res) => {
-  const baseScrapeUrl = 'https://www.google.com/search?q=talleres&oq=tall&gs_lcrp=EgZjaHJvbWUqDwgAECMYJxjjAhiABBiKBTIPCAAQIxgnGOMCGIAEGIoFMg8IARAuGCcYyQMYgAQYigUyBggCEEUYOTISCAMQABhDGIMBGLEDGIAEGIoFMgwIBBAAGEMYgAQYigUyDAgFEAAYQxiABBiKBTIGCAYQRRg8MgYIBxBFGDzSAQc5MzVqMGo3qAIIsAIB&sourceid=chrome&ie=UTF-8#sie=m;/g/11lcpky1vw;2;/m/04hpk1;dt;fp;1;;;'
+  const baseScrapeUrl =
+    'https://www.google.com/search?q=talleres&oq=tall&gs_lcrp=EgZjaHJvbWUqDwgAECMYJxjjAhiABBiKBTIPCAAQIxgnGOMCGIAEGIoFMg8IARAuGCcYyQMYgAQYigUyBggCEEUYOTISCAMQABhDGIMBGLEDGIAEGIoFMgwIBBAAGEMYgAQYigUyDAgFEAAYQxiABBiKBTIGCAYQRRg8MgYIBxBFGDzSAQc5MzVqMGo3qAIIsAIB&sourceid=chrome&ie=UTF-8#sie=m;/g/11lcpky1vw;2;/m/04hpk1;dt;fp;1;;;'
 
   try {
-    const { urlScrapeAllMatches, league, country, seasonYear, round, order, totalRounds, div } = req.body
+    const {
+      urlScrapeAllMatches,
+      league,
+      country,
+      seasonYear,
+      round,
+      order,
+      totalRounds,
+      div
+    } = req.body
     const seasonId = req.params.seasonId
 
     console.log('req.body', req.body)
     // Scraping de la URL para obtener los partidos
-    const matches = await scrapeMatches(urlScrapeAllMatches, round, totalRounds, div)
+    const matches = await scrapeMatches(
+      urlScrapeAllMatches,
+      round,
+      totalRounds,
+      div
+    )
     console.log('matches scrape', matches)
     if (!matches || matches.length === 0) {
-      return res.status(400).json({ status: false, message: 'No se pudieron obtener los partidos mediante scraping' })
+      return res
+        .status(400)
+        .json({
+          status: false,
+          message: 'No se pudieron obtener los partidos mediante scraping'
+        })
     }
 
     // Obtener la temporada por el año
     const season = await Season.findById(seasonId).populate('zones')
     if (!season) {
-      return res.status(404).json({ status: false, message: 'Temporada no encontrada' })
+      return res
+        .status(404)
+        .json({ status: false, message: 'Temporada no encontrada' })
     }
     // Obtener los teamCodes de los partidos scrapeados
     const homeTeamCodes = matches.map((match) => match.team1.teamCode)
@@ -737,7 +853,10 @@ const addMatchesByScraping = async (req, res) => {
         continue // O maneja el error de manera adecuada
       }
       // Generate the urlScrape by replacing the matchCode
-      const urlScrape = baseScrapeUrl.replace('/g/11lcpky1vw', matchData.matchCode)
+      const urlScrape = baseScrapeUrl.replace(
+        '/g/11lcpky1vw',
+        matchData.matchCode
+      )
       // Crear el partido
       const match = await Match.create({
         homeTeam: homeTeamId,
@@ -812,7 +931,13 @@ const addMatchesByScraping = async (req, res) => {
     res.status(201).json({ populatedMatches, state: 'ok' })
   } catch (error) {
     console.error('Error al crear partidos mediante scraping:', error)
-    res.status(500).json({ status: false, message: `Error al crear partidos mediante scraping, Error: ${error.message}`, error: error.message })
+    res
+      .status(500)
+      .json({
+        status: false,
+        message: `Error al crear partidos mediante scraping, Error: ${error.message}`,
+        error: error.message
+      })
   }
 }
 
@@ -967,7 +1092,9 @@ const getTablePosition = async (req, res) => {
 // Controlador para obtener todas las temporadas que son la actual (isCurrentSeason = true)
 const getAllCurrentSeasons = async (req, res) => {
   try {
-    const currentSeasons = await Season.find({ isCurrentSeason: true }).populate('league')
+    const currentSeasons = await Season.find({
+      isCurrentSeason: true
+    }).populate('league')
     res.json(currentSeasons)
   } catch (error) {
     console.log('error,', error)
@@ -984,7 +1111,11 @@ const getAllTeamsSeason = async (req, res) => {
     const teams = await Team.find({ season }) // Ajusta según cómo esté estructurado tu modelo
     console.log('EQUIPOS', teams)
     if (!teams) {
-      return res.status(404).json({ message: 'No se encontraron equipos para la temporada especificada' })
+      return res
+        .status(404)
+        .json({
+          message: 'No se encontraron equipos para la temporada especificada'
+        })
     }
 
     res.status(200).json(teams)
@@ -1024,7 +1155,12 @@ const deleteSeasonInfoFull = async (req, res) => {
 
     await Season.findByIdAndDelete(seasonId)
 
-    res.status(200).json({ message: 'Temporada y todos sus datos asociados eliminados exitosamente' })
+    res
+      .status(200)
+      .json({
+        message:
+          'Temporada y todos sus datos asociados eliminados exitosamente'
+      })
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Error al eliminar la temporada', error })

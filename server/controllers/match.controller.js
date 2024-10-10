@@ -20,6 +20,23 @@ import nodemailer from 'nodemailer'
 const getAllMatches = async (req, res) => {
   try {
     const query = {}
+    console.log('req.query.status', req.query.status)
+    // Filtrar por estado (ej. Suspendido, Pospuesto)
+    // if (req.query.status && req.query.status.toLowerCase() !== 'Finalizado') {
+    //   const encodedStatus = decodeURIComponent(req.query.status)
+    //   query.status = encodedStatus
+    // }
+    // Filtro por estado
+    if (req.query.status) {
+      const statusArray = req.query.status.split(',')
+      query.status = { $in: statusArray } // Filtrar por cualquiera de los estados seleccionados
+    }
+
+    // Filtro por país
+    if (req.query.country) {
+      const countryArray = req.query.country.split(',')
+      query.country = { $in: countryArray } // Filtrar por cualquiera de los países seleccionados
+    }
 
     if (req.query.isFinished) {
       if (req.query.isFinished !== 'all') {
@@ -33,10 +50,10 @@ const getAllMatches = async (req, res) => {
       query.league = encodedLeague
     }
 
-    if (req.query.country && req.query.country.toLowerCase() !== 'all') {
-      const encodedCountry = decodeURIComponent(req.query.country)
-      query.country = encodedCountry
-    }
+    // if (req.query.country && req.query.country.toLowerCase() !== 'all') {
+    //   const encodedCountry = decodeURIComponent(req.query.country)
+    //   query.country = encodedCountry
+    // }
 
     if (req.query.seasonYear) {
       // Ahora es un id de la temporada
@@ -68,6 +85,7 @@ const getAllMatches = async (req, res) => {
     }
 
     const matches = await Match.find(query)
+      // .populate('homeTeam awayTeam')
       .populate('homeTeam awayTeam')
       .populate('league')
       .populate('seasonYear')
@@ -448,7 +466,12 @@ const updateMatchResult = async (req, res) => {
     // Actualizar resultado del partido
     match.goalsHome = scrapedData.homeScore || goalsHome
     match.goalsAway = scrapedData.awayScore || goalsAway
-    match.isFinished = true
+    match.isFinished = match.status === 'Finalizado'
+
+    // Actualizar el estado del partido basado en los datos del scraping
+    if (scrapedData.status) {
+      match.status = scrapedData.status // Aquí asignas el valor de status
+    }
 
     // Si se proporciona resultado de penales, actualizarlo
     if (penaltyResult) {
@@ -2580,6 +2603,7 @@ const deleteMatchById = async (req, res) => {
 
 // Controlador para actualizar un partido por su ID
 const updateMatchById = async (req, res) => {
+  console.log('HOLA')
   try {
     const matchId = req.params.id
     const {
@@ -2594,7 +2618,8 @@ const updateMatchById = async (req, res) => {
       goalsAway,
       isFinished,
       referee,
-      urlScrape
+      urlScrape,
+      status
     } = req.body
     console.log('req.body', req.body)
 
@@ -2610,7 +2635,8 @@ const updateMatchById = async (req, res) => {
       goalsHome,
       goalsAway,
       isFinished,
-      urlScrape
+      urlScrape,
+      status
     }
     // Si se proporciona un referee y no está vacío, lo añadimos al objeto de actualización
     if (referee && referee !== '') {

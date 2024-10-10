@@ -28,7 +28,25 @@ export const scrapeMatchData = async (url) => {
     })
 
     await page.goto(url, { waitUntil: 'domcontentloaded' })
+    // Verificar si el marcador y los datos están presentes
+    const isScorePresent = await page.$('span.imso_mh__score > span')
+    const isTablePresent = await page.$('table.lr-imso-ss-wdt')
+    if (!isScorePresent || !isTablePresent) {
+      const status = await page.evaluate(() => {
+        const statusElement = document.querySelector('span.imso_mh__ab-stts')
+        return statusElement ? statusElement.innerText : null // Retorna null si no se encuentra el status
+      })
+      console.log('statusElement', status)
 
+      await browser.close()
+      return {
+        homeScore: 0,
+        awayScore: 0,
+        status,
+        additionalData: null
+      }
+    }
+    console.log('ACA EBTRA')
     // Esperar a que los selectores clave estén presentes
     await page.waitForSelector('span.imso_mh__score > span', { timeout: 60000 })
     await page.waitForSelector('table.lr-imso-ss-wdt', { timeout: 60000 })
@@ -70,15 +88,25 @@ export const scrapeMatchData = async (url) => {
     const homeScore = $(scores[0]).text().trim()
     const awayScore = $(scores[1]).text().trim()
 
+    // Obtener el status del partido desde el span con la clase 'imso_mh__ab-stts'
+    // const status = $('span.imso_mh__ab-stts').text().trim()
+    // Intentamos extraer el 'status' de ambas clases
+    const status = await page.evaluate(() => {
+      const statusElement = document.querySelector('span.imso_mh__ab-stts') || document.querySelector('span.imso_mh__ft-mtch')
+      return statusElement ? statusElement.innerText : null
+    })
+
     await browser.close()
     console.log('DATA A PROBAR:', {
       homeScore,
       awayScore,
+      status,
       ...additionalData
     })
     return {
       homeScore,
       awayScore,
+      status,
       ...additionalData
     }
   } catch (error) {
